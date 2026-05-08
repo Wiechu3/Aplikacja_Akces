@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Akces NCBR</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#start" aria-label="Akces NCBR - start">
+          <span class="brand-mark">AKCES</span>
+          <span class="brand-name">Akces NCBR</span>
+        </a>
+        <nav class="nav-tabs" aria-label="Menu glowne">
+          <button class="nav-button is-active" data-view="start">Start</button>
+          <button class="nav-button" data-view="expenses">Wydatki</button>
+          <button class="nav-button" data-view="documents">Dokumenty</button>
+          <button class="nav-button" data-view="calendar">Kalendarz</button>
+          <button class="nav-button" data-view="reports">Raporty</button>
+          <button class="nav-button" data-view="tutorial">Samouczek</button>
+          <button class="nav-button" data-view="settings">Ustawienia</button>
+        </nav>
+      </header>
+
+      <main class="workspace">
+        <section class="content" id="app"></section>
+        <aside class="beneficiary-panel" aria-label="Wybor beneficjenta">
+          <div class="panel-header">
+            <p class="eyebrow">Aktywny widok</p>
+            <h2 id="active-beneficiary-name">ADMIN</h2>
+          </div>
+          <div class="field">
+            <label for="beneficiary-select">Beneficjent</label>
+            <select id="beneficiary-select"></select>
+          </div>
+          <p class="context-note" id="beneficiary-context">
+            ADMIN widzi dane wszystkich beneficjentow i moze zarzadzac statusem wydatkow.
+          </p>
+          <div class="mini-stats">
+            <div>
+              <strong id="stat-expenses">0</strong>
+              <span>wydatki</span>
+            </div>
+            <div>
+              <strong id="stat-documents">0</strong>
+              <span>dokumenty</span>
+            </div>
+            <div>
+              <strong id="stat-calendar">0</strong>
+              <span>terminy</span>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
