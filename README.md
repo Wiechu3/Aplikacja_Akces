@@ -5,6 +5,7 @@ Lokalne MVP aplikacji webowej do prezentacji kierunku rozwoju systemu Akces NCBR
 ## Uruchomienie
 
 ```bash
+npm install
 npm start
 ```
 

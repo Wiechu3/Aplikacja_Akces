@@ -3,6 +3,8 @@ const state = {
   activeBeneficiaryId: "admin",
   showDocumentForm: false,
   calendarDate: new Date(),
+  calendarView: "dayGridMonth",
+  calendarModal: null,
   data: {
     beneficiaries: [],
     expenses: [],
@@ -63,6 +65,22 @@ function dateKey(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function toLocalDateTimeValue(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function addMinutesToDateTime(value, minutes) {
+  const date = new Date(value);
+  date.setMinutes(date.getMinutes() + minutes);
+  return toLocalDateTimeValue(date);
 }
 
 function getBeneficiary(id = state.activeBeneficiaryId) {
@@ -476,77 +494,111 @@ function renderDocuments() {
   `;
 }
 
-function calendarInviteOptions() {
-  if (isAdmin()) {
-    return state.data.beneficiaries
-      .filter((beneficiary) => beneficiary.id !== "admin" && beneficiary.active)
-      .map((beneficiary) => `
+function participantOptions(selectedIds = []) {
+  const allowed = isAdmin()
+    ? state.data.beneficiaries.filter((beneficiary) => beneficiary.id !== "admin" && beneficiary.active)
+    : state.data.beneficiaries.filter((beneficiary) => beneficiary.id === "admin" || beneficiary.id === state.activeBeneficiaryId);
+
+  return allowed
+    .map((beneficiary) => {
+      const checked = selectedIds.includes(beneficiary.id) || (!isAdmin() && beneficiary.id === "admin");
+      const disabled = !isAdmin() && beneficiary.id === state.activeBeneficiaryId;
+      return `
         <label class="check-row">
-          <input type="checkbox" name="invitedIds" value="${beneficiary.id}" />
+          <input type="checkbox" name="participantIds" value="${beneficiary.id}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""} />
           <span>${escapeHtml(beneficiary.name)}</span>
         </label>
-      `)
-      .join("");
-  }
-  return `
-    <label class="check-row">
-      <input type="checkbox" name="invitedIds" value="admin" checked />
-      <span>ADMIN</span>
-    </label>
-  `;
+      `;
+    })
+    .join("");
 }
 
-function renderCalendarModal(day) {
-  if (!day) return "";
+function calendarEventStart(item) {
+  return item.startAt || `${item.dueDate || dateKey(new Date())}T${item.dueTime || "09:00"}`;
+}
+
+function calendarEventEnd(item) {
+  return item.endAt || addMinutesToDateTime(calendarEventStart(item), 60);
+}
+
+function calendarParticipants(item) {
+  return [...new Set([item.beneficiaryId, ...(item.participantIds || []), ...(item.invitedIds || [])].filter(Boolean))];
+}
+
+function calendarPayloadFromEvent(item) {
+  const participants = calendarParticipants(item);
+  const names = participants.map((id) => getBeneficiary(id)?.name).filter(Boolean);
+  return {
+    id: item.id,
+    title: item.title,
+    start: calendarEventStart(item),
+    end: calendarEventEnd(item),
+    backgroundColor: "#f26a21",
+    borderColor: "#c94f12",
+    extendedProps: {
+      note: item.note || "",
+      type: item.type || "zadanie",
+      participantIds: participants,
+      participantNames: names,
+      attachments: item.attachments || []
+    }
+  };
+}
+
+function renderCalendarModal() {
+  const modal = state.calendarModal;
+  if (!modal) return "";
+  const event = modal.eventId ? state.data.calendar.find((item) => item.id === modal.eventId) : null;
+  const startAt = event ? calendarEventStart(event) : modal.startAt;
+  const endAt = event ? calendarEventEnd(event) : modal.endAt || addMinutesToDateTime(startAt, 60);
+  const selectedIds = event ? calendarParticipants(event) : isAdmin() ? [] : [state.activeBeneficiaryId, "admin"];
+
   return `
     <div class="modal-backdrop" data-close-calendar-modal>
-      <section class="modal" role="dialog" aria-modal="true" aria-label="Dodaj wydarzenie" data-modal-panel>
+      <section class="modal" role="dialog" aria-modal="true" aria-label="${event ? "Edytuj wydarzenie" : "Dodaj wydarzenie"}" data-modal-panel>
         <div class="section-head compact">
           <div>
-            <p class="eyebrow">${formatDate(day)}</p>
-            <h1>Dodaj wydarzenie</h1>
+            <p class="eyebrow">FullCalendar</p>
+            <h1>${event ? "Edytuj wydarzenie" : "Dodaj wydarzenie"}</h1>
           </div>
           <button class="button ghost" type="button" data-close-calendar-modal>Zamknij</button>
         </div>
         <form id="calendar-form" class="form-panel">
+          <input type="hidden" name="id" value="${escapeHtml(event?.id || "")}" />
           <input type="hidden" name="actorId" value="${state.activeBeneficiaryId}" />
-          <input type="hidden" name="dueDate" value="${day}" />
-          ${isAdmin() ? "" : `<input type="hidden" name="beneficiaryId" value="${state.activeBeneficiaryId}" />`}
           <div class="form-grid">
-            <div class="field">
-              <label for="calendar-title">Tytul</label>
-              <input id="calendar-title" name="title" required />
+            <div class="field is-wide">
+              <label for="calendar-title">Nazwa wydarzenia</label>
+              <input id="calendar-title" name="title" value="${escapeHtml(event?.title || "")}" required />
             </div>
             <div class="field">
-              <label for="calendar-time">Godzina</label>
-              <input id="calendar-time" name="dueTime" type="time" />
+              <label for="calendar-start">Start</label>
+              <input id="calendar-start" name="startAt" type="datetime-local" value="${escapeHtml(startAt)}" required />
+            </div>
+            <div class="field">
+              <label for="calendar-end">Koniec</label>
+              <input id="calendar-end" name="endAt" type="datetime-local" value="${escapeHtml(endAt)}" required />
             </div>
             <div class="field">
               <label for="calendar-type">Typ</label>
-              <input id="calendar-type" name="type" placeholder="np. formalnosc, dokument, raport" />
+              <input id="calendar-type" name="type" value="${escapeHtml(event?.type || "zadanie")}" />
             </div>
             <div class="field">
               <label for="calendar-files">Zalaczniki</label>
               <input id="calendar-files" name="files" type="file" multiple />
             </div>
-            ${
-              isAdmin()
-                ? `<div class="field is-wide">
-                    <label>Zaproszeni beneficjenci</label>
-                    <div class="check-grid">${calendarInviteOptions()}</div>
-                  </div>`
-                : `<div class="field is-wide">
-                    <label>Zaproszone osoby</label>
-                    <div class="check-grid">${calendarInviteOptions()}</div>
-                  </div>`
-            }
+            <div class="field is-wide">
+              <label>Uzytkownicy przypisani</label>
+              <div class="check-grid">${participantOptions(selectedIds)}</div>
+            </div>
             <div class="field is-wide">
               <label for="calendar-note">Opis</label>
-              <textarea id="calendar-note" name="note"></textarea>
+              <textarea id="calendar-note" name="note">${escapeHtml(event?.note || "")}</textarea>
             </div>
           </div>
           <div class="form-actions">
-            <button class="button" type="submit">Dodaj wydarzenie</button>
+            <button class="button" type="submit">${event ? "Zapisz zmiany" : "Dodaj wydarzenie"}</button>
+            ${event ? `<button class="button ghost" type="button" data-delete-calendar-event="${event.id}">Usun</button>` : ""}
           </div>
         </form>
       </section>
@@ -554,49 +606,92 @@ function renderCalendarModal(day) {
   `;
 }
 
-function renderCalendar() {
-  const year = state.calendarDate.getFullYear();
-  const month = state.calendarDate.getMonth();
-  const monthName = new Intl.DateTimeFormat("pl-PL", { month: "long", year: "numeric" }).format(state.calendarDate);
-  const firstDay = new Date(year, month, 1);
-  const startOffset = (firstDay.getDay() + 6) % 7;
-  const startDate = new Date(year, month, 1 - startOffset);
-  const selectedDay = app.dataset.selectedCalendarDay || "";
-  const days = Array.from({ length: 42 }, (_, index) => {
-    const day = new Date(startDate);
-    day.setDate(startDate.getDate() + index);
-    const key = dateKey(day);
-    const events = state.data.calendar.filter((item) => item.dueDate === key);
-    const muted = day.getMonth() !== month ? "is-muted" : "";
-    const today = key === dateKey(new Date()) ? "is-today" : "";
-    return `
-      <button class="calendar-day ${muted} ${today}" data-calendar-day="${key}" type="button">
-        <span>${day.getDate()}</span>
-        <div class="calendar-events">
-          ${events.slice(0, 3).map((item) => `<em>${escapeHtml(item.dueTime || "")} ${escapeHtml(item.title)}</em>`).join("")}
-          ${events.length > 3 ? `<strong>+${events.length - 3}</strong>` : ""}
-        </div>
-      </button>
-    `;
+function mountFullCalendar() {
+  const element = document.querySelector("#fullcalendar");
+  if (!element) return;
+  if (!window.FullCalendar) {
+    element.innerHTML = `<div class="empty-state">Nie udalo sie zaladowac biblioteki kalendarza.</div>`;
+    return;
+  }
+
+  const calendar = new window.FullCalendar.Calendar(element, {
+    initialView: state.calendarView,
+    initialDate: state.calendarDate,
+    locale: "pl",
+    firstDay: 1,
+    height: "auto",
+    nowIndicator: true,
+    editable: true,
+    selectable: true,
+    navLinks: true,
+    eventTimeFormat: { hour: "2-digit", minute: "2-digit", hour12: false },
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "dayGridMonth,timeGridWeek,timeGridDay"
+    },
+    buttonText: {
+      today: "Dzisiaj",
+      month: "Miesiac",
+      week: "Tydzien",
+      day: "Dzien"
+    },
+    events: state.data.calendar.map(calendarPayloadFromEvent),
+    datesSet(info) {
+      state.calendarView = info.view.type;
+      state.calendarDate = info.view.currentStart;
+    },
+    dateClick(info) {
+      const startAt = info.dateStr.includes("T") ? toLocalDateTimeValue(info.date) : `${info.dateStr}T09:00`;
+      state.calendarModal = { startAt, endAt: addMinutesToDateTime(startAt, 60) };
+      renderCalendar();
+    },
+    select(info) {
+      state.calendarModal = {
+        startAt: toLocalDateTimeValue(info.start),
+        endAt: toLocalDateTimeValue(info.end)
+      };
+      renderCalendar();
+    },
+    eventClick(info) {
+      state.calendarModal = { eventId: info.event.id };
+      renderCalendar();
+    },
+    eventContent(info) {
+      const names = info.event.extendedProps.participantNames || [];
+      return {
+        html: `
+          <div class="fc-akces-event">
+            <strong>${escapeHtml(info.event.title)}</strong>
+            ${names.length ? `<span>${escapeHtml(names.join(", "))}</span>` : ""}
+          </div>
+        `
+      };
+    },
+    async eventDrop(info) {
+      await persistCalendarMove(info);
+    },
+    async eventResize(info) {
+      await persistCalendarMove(info);
+    }
   });
 
+  calendar.render();
+}
+
+function renderCalendar() {
   app.innerHTML = `
-    ${pageHead("Kalendarz", "Widok miesiaca dziala jak roboczy kalendarz: kliknij dzien, zeby dodac wydarzenie z godzina i zaproszonymi osobami.")}
-    <section class="calendar-shell">
-      <div class="calendar-toolbar">
-        <button class="button secondary" data-calendar-prev type="button">Poprzedni</button>
-        <h2>${escapeHtml(monthName)}</h2>
-        <button class="button secondary" data-calendar-next type="button">Nastepny</button>
-      </div>
-      <div class="calendar-weekdays">
-        <span>Pon</span><span>Wt</span><span>Sr</span><span>Czw</span><span>Pt</span><span>Sob</span><span>Nd</span>
-      </div>
-      <div class="calendar-grid">
-        ${days.join("")}
-      </div>
+    ${pageHead(
+      "Kalendarz",
+      "Kalendarz korzysta z FullCalendar: ma widok miesiaca, tygodnia i dnia, edycje wydarzen oraz przypisanych uzytkownikow.",
+      `<button class="button" data-open-calendar-modal>Dodaj wydarzenie</button>`
+    )}
+    <section class="calendar-shell fullcalendar-shell">
+      <div id="fullcalendar"></div>
     </section>
-    ${renderCalendarModal(selectedDay)}
+    ${renderCalendarModal()}
   `;
+  mountFullCalendar();
 }
 
 function renderReports() {
@@ -763,6 +858,31 @@ function filterExpenses() {
   });
 }
 
+async function persistCalendarMove(info) {
+  const existing = state.data.calendar.find((item) => item.id === info.event.id);
+  if (!existing) return;
+  try {
+    await api(`/api/calendar/${existing.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        actorId: state.activeBeneficiaryId,
+        title: existing.title,
+        startAt: toLocalDateTimeValue(info.event.start),
+        endAt: toLocalDateTimeValue(info.event.end || new Date(info.event.start.getTime() + 60 * 60 * 1000)),
+        type: existing.type || "zadanie",
+        note: existing.note || "",
+        participantIds: calendarParticipants(existing),
+        files: []
+      })
+    });
+    showToast("Zmieniono termin wydarzenia.");
+    await loadState();
+  } catch (error) {
+    info.revert();
+    showToast(error.message);
+  }
+}
+
 document.querySelectorAll(".nav-button").forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.view));
 });
@@ -779,7 +899,7 @@ document.addEventListener("click", async (event) => {
   const closeButton = event.target.closest("button[data-close-calendar-modal]");
   const backdropClick = event.target.classList.contains("modal-backdrop");
   if (closeButton || backdropClick) {
-    delete app.dataset.selectedCalendarDay;
+    state.calendarModal = null;
     renderCalendar();
     return;
   }
@@ -803,24 +923,21 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
-  if (event.target.closest("[data-calendar-prev]")) {
-    state.calendarDate = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth() - 1, 1);
-    delete app.dataset.selectedCalendarDay;
+  if (event.target.closest("[data-open-calendar-modal]")) {
+    const startAt = toLocalDateTimeValue(new Date());
+    state.calendarModal = { startAt, endAt: addMinutesToDateTime(startAt, 60) };
     renderCalendar();
     return;
   }
 
-  if (event.target.closest("[data-calendar-next]")) {
-    state.calendarDate = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth() + 1, 1);
-    delete app.dataset.selectedCalendarDay;
-    renderCalendar();
-    return;
-  }
-
-  const day = event.target.closest("[data-calendar-day]");
-  if (day) {
-    app.dataset.selectedCalendarDay = day.dataset.calendarDay;
-    renderCalendar();
+  const deleteEvent = event.target.closest("[data-delete-calendar-event]");
+  if (deleteEvent) {
+    await api(`/api/calendar/${deleteEvent.dataset.deleteCalendarEvent}?actorId=${state.activeBeneficiaryId}`, {
+      method: "DELETE"
+    });
+    state.calendarModal = null;
+    showToast("Usunieto wydarzenie.");
+    await loadState();
     return;
   }
 
@@ -898,17 +1015,19 @@ document.addEventListener("submit", async (event) => {
 
     if (form.id === "calendar-form") {
       const payload = formDataToObject(form);
-      payload.invitedIds = formCheckboxValues(form, "invitedIds");
+      payload.participantIds = formCheckboxValues(form, "participantIds");
       payload.files = await filesToPayload(form.querySelector("#calendar-files")?.files);
-      if (isAdmin()) {
-        payload.beneficiaryId = payload.invitedIds.find((id) => id !== "admin") || "";
+      if (!isAdmin() && !payload.participantIds.includes(state.activeBeneficiaryId)) {
+        payload.participantIds.push(state.activeBeneficiaryId);
       }
-      await api("/api/calendar", {
-        method: "POST",
+      const eventId = payload.id;
+      delete payload.id;
+      await api(eventId ? `/api/calendar/${eventId}` : "/api/calendar", {
+        method: eventId ? "PATCH" : "POST",
         body: JSON.stringify(payload)
       });
-      delete app.dataset.selectedCalendarDay;
-      showToast("Dodano wydarzenie do kalendarza.");
+      state.calendarModal = null;
+      showToast(eventId ? "Zapisano zmiany wydarzenia." : "Dodano wydarzenie do kalendarza.");
       await loadState();
     }
 

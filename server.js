@@ -12,6 +12,14 @@ const DATA_FILE = join(DATA_DIR, "data.json");
 const BENEFICIARIES_DIR = join(DATA_DIR, "beneficiaries");
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_PAYLOAD_BYTES = 55 * 1024 * 1024;
+const VENDOR_FILES = {
+  "/vendor/fullcalendar/core.js": join(__dirname, "node_modules/@fullcalendar/core/index.global.min.js"),
+  "/vendor/fullcalendar/daygrid.js": join(__dirname, "node_modules/@fullcalendar/daygrid/index.global.min.js"),
+  "/vendor/fullcalendar/timegrid.js": join(__dirname, "node_modules/@fullcalendar/timegrid/index.global.min.js"),
+  "/vendor/fullcalendar/interaction.js": join(__dirname, "node_modules/@fullcalendar/interaction/index.global.min.js"),
+  "/vendor/fullcalendar/list.js": join(__dirname, "node_modules/@fullcalendar/list/index.global.min.js"),
+  "/vendor/fullcalendar/pl.js": join(__dirname, "node_modules/@fullcalendar/core/locales/pl.global.min.js")
+};
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -127,10 +135,10 @@ function seedData() {
         id: "cal_demo_1",
         beneficiaryId: "ben_fundacja_demo",
         title: "Przekazanie weksla",
-        dueDate: "2026-05-20",
-        dueTime: "10:00",
+        startAt: "2026-05-20T10:00",
+        endAt: "2026-05-20T11:00",
         ownerId: "admin",
-        invitedIds: ["ben_fundacja_demo"],
+        participantIds: ["ben_fundacja_demo"],
         type: "formalnosc",
         status: "do-zrobienia",
         note: "Termin widoczny dla beneficjenta i administratora.",
@@ -166,11 +174,56 @@ function initStorage() {
 
 function readData() {
   initStorage();
-  return JSON.parse(readFileSync(DATA_FILE, "utf8"));
+  const data = JSON.parse(readFileSync(DATA_FILE, "utf8"));
+  return normalizeData(data);
 }
 
 function writeData(data) {
   writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+function addHoursToLocal(value, hours = 1) {
+  const date = new Date(value);
+  date.setHours(date.getHours() + hours);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const localHours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${localHours}:${minutes}`;
+}
+
+function normalizeCalendarItem(item) {
+  const dueDate = item.dueDate || new Date().toISOString().slice(0, 10);
+  const dueTime = item.dueTime || "09:00";
+  const startAt = item.startAt || `${dueDate}T${dueTime}`;
+  let endAt = item.endAt || addHoursToLocal(startAt, 1);
+  if (new Date(endAt) <= new Date(startAt)) {
+    endAt = addHoursToLocal(startAt, 1);
+  }
+  const participantIds = [
+    item.beneficiaryId,
+    ...(Array.isArray(item.participantIds) ? item.participantIds : []),
+    ...(Array.isArray(item.invitedIds) ? item.invitedIds : [])
+  ].filter(Boolean);
+
+  return {
+    ...item,
+    startAt,
+    endAt,
+    participantIds: [...new Set(participantIds)],
+    attachments: Array.isArray(item.attachments) ? item.attachments : []
+  };
+}
+
+function normalizeData(data) {
+  return {
+    beneficiaries: Array.isArray(data.beneficiaries) ? data.beneficiaries : [],
+    expenses: Array.isArray(data.expenses) ? data.expenses : [],
+    documents: Array.isArray(data.documents) ? data.documents : [],
+    calendar: Array.isArray(data.calendar) ? data.calendar.map(normalizeCalendarItem) : [],
+    tutorials: Array.isArray(data.tutorials) ? data.tutorials : []
+  };
 }
 
 function sendJson(res, status, payload) {
@@ -206,8 +259,8 @@ function selectedData(data, beneficiaryId) {
     calendar: isAdmin
       ? data.calendar
       : data.calendar.filter((item) => {
-          const invitedIds = Array.isArray(item.invitedIds) ? item.invitedIds : [];
-          return item.beneficiaryId === beneficiaryId || item.ownerId === beneficiaryId || invitedIds.includes(beneficiaryId);
+          const participantIds = Array.isArray(item.participantIds) ? item.participantIds : [];
+          return item.beneficiaryId === beneficiaryId || item.ownerId === beneficiaryId || participantIds.includes(beneficiaryId);
         }),
     tutorials: data.tutorials
   };
@@ -297,24 +350,24 @@ function exportCalendarCsv(data, beneficiaryId) {
   const rows = selectedData(data, beneficiaryId).calendar.map((item) => {
     const beneficiary = data.beneficiaries.find((entry) => entry.id === item.beneficiaryId);
     const owner = data.beneficiaries.find((entry) => entry.id === item.ownerId);
-    const invited = (item.invitedIds || [])
+    const participants = (item.participantIds || [])
       .map((id) => data.beneficiaries.find((entry) => entry.id === id)?.name)
       .filter(Boolean)
       .join(", ");
     return [
       beneficiary?.name || "",
       item.title,
-      item.dueDate,
-      item.dueTime,
+      item.startAt,
+      item.endAt,
       owner?.name || "",
-      invited,
+      participants,
       item.type,
       item.status,
       item.note,
       (item.attachments || []).map((file) => file.fileName).join(", ")
     ];
   });
-  return [["Beneficjent", "Wydarzenie", "Data", "Godzina", "Dodane przez", "Zaproszeni", "Typ", "Status", "Opis", "Zalaczniki"], ...rows]
+  return [["Beneficjent", "Wydarzenie", "Start", "Koniec", "Dodane przez", "Uczestnicy", "Typ", "Status", "Opis", "Zalaczniki"], ...rows]
     .map(csvLine)
     .join("\n");
 }
@@ -323,6 +376,47 @@ function exportReportCsv(data, beneficiaryId, type) {
   if (type === "documents") return exportDocumentsCsv(data, beneficiaryId);
   if (type === "calendar") return exportCalendarCsv(data, beneficiaryId);
   return exportExpensesCsv(data, beneficiaryId);
+}
+
+function validateCalendarPayload(data, body, existingEvent = null) {
+  const actorId = String(body.actorId || "");
+  const actor = data.beneficiaries.find((item) => item.id === actorId);
+  if (!actor) {
+    return { error: "Nie mozna ustalic osoby zapisujacej wydarzenie." };
+  }
+
+  const startAt = String(body.startAt || "").trim();
+  const endAt = String(body.endAt || "").trim();
+  if (!startAt || !endAt || Number.isNaN(new Date(startAt).getTime()) || Number.isNaN(new Date(endAt).getTime())) {
+    return { error: "Podaj poprawna date i godzine rozpoczecia oraz zakonczenia." };
+  }
+  if (new Date(endAt) <= new Date(startAt)) {
+    return { error: "Data zakonczenia musi byc pozniejsza niz data rozpoczecia." };
+  }
+
+  const knownIds = new Set(data.beneficiaries.map((item) => item.id));
+  const participantIds = [...new Set(Array.isArray(body.participantIds) ? body.participantIds.filter((id) => knownIds.has(id)) : [])];
+  if (actorId === "admin") {
+    if (!participantIds.some((id) => id !== "admin")) {
+      return { error: "ADMIN musi przypisac wydarzenie przynajmniej do jednego beneficjenta." };
+    }
+  } else {
+    if (!participantIds.includes(actorId)) participantIds.push(actorId);
+    if (!participantIds.includes("admin")) participantIds.push("admin");
+  }
+
+  const existingParticipants = Array.isArray(existingEvent?.participantIds) ? existingEvent.participantIds : [];
+  if (existingEvent && actorId !== "admin" && existingEvent.ownerId !== actorId && !existingParticipants.includes(actorId)) {
+    return { error: "Beneficjent moze edytowac tylko wydarzenia, w ktorych uczestniczy." };
+  }
+
+  const beneficiaryId = participantIds.find((id) => id !== "admin") || body.beneficiaryId || existingEvent?.beneficiaryId;
+  const beneficiary = data.beneficiaries.find((item) => item.id === beneficiaryId && item.id !== "admin");
+  if (!beneficiary) {
+    return { error: "Wybierz beneficjenta powiazanego z wydarzeniem." };
+  }
+
+  return { actor, beneficiary, startAt, endAt, participantIds };
 }
 
 async function handleApi(req, res) {
@@ -474,32 +568,20 @@ async function handleApi(req, res) {
 
   if (req.method === "POST" && url.pathname === "/api/calendar") {
     const body = await readBody(req);
-    const actorId = String(body.actorId || "");
-    const actor = data.beneficiaries.find((item) => item.id === actorId);
-    if (!actor) {
-      sendJson(res, 403, { error: "Nie mozna ustalic osoby dodajacej wydarzenie." });
+    const validated = validateCalendarPayload(data, body);
+    if (validated.error) {
+      sendJson(res, 400, { error: validated.error });
       return;
     }
-    const invitedIds = Array.isArray(body.invitedIds) ? body.invitedIds.filter((id) => data.beneficiaries.some((item) => item.id === id)) : [];
-    if (actorId !== "admin" && body.beneficiaryId !== actorId) {
-      sendJson(res, 403, { error: "Beneficjent moze dodac wydarzenie tylko w swoim kalendarzu." });
-      return;
-    }
-    const beneficiaryId = actorId === "admin" ? invitedIds.find((id) => id !== "admin") || body.beneficiaryId : actorId;
-    const beneficiary = data.beneficiaries.find((item) => item.id === beneficiaryId && item.id !== "admin");
-    if (!beneficiary) {
-      sendJson(res, 400, { error: "Wybierz beneficjenta powiazanego z wydarzeniem." });
-      return;
-    }
-    const attachments = saveBase64Files(beneficiary, body.files, "uploads");
+    const attachments = saveBase64Files(validated.beneficiary, body.files, "uploads");
     const item = {
       id: makeId("cal"),
-      beneficiaryId: beneficiary.id,
+      beneficiaryId: validated.beneficiary.id,
       title: String(body.title || "").trim(),
-      dueDate: body.dueDate || "",
-      dueTime: body.dueTime || "",
-      ownerId: actor.id,
-      invitedIds: [...new Set(invitedIds)],
+      startAt: validated.startAt,
+      endAt: validated.endAt,
+      ownerId: validated.actor.id,
+      participantIds: validated.participantIds,
       type: String(body.type || "zadanie").trim(),
       status: "do-zrobienia",
       note: String(body.note || "").trim(),
@@ -511,7 +593,68 @@ async function handleApi(req, res) {
     return;
   }
 
+  if (req.method === "PATCH" && url.pathname.startsWith("/api/calendar/")) {
+    const id = url.pathname.split("/").pop();
+    const body = await readBody(req);
+    const item = data.calendar.find((entry) => entry.id === id);
+    if (!item) {
+      sendJson(res, 404, { error: "Wydarzenie nie zostalo znalezione." });
+      return;
+    }
+    const validated = validateCalendarPayload(data, body, item);
+    if (validated.error) {
+      sendJson(res, 400, { error: validated.error });
+      return;
+    }
+    const attachments = saveBase64Files(validated.beneficiary, body.files, "uploads");
+    item.beneficiaryId = validated.beneficiary.id;
+    item.title = String(body.title || "").trim();
+    item.startAt = validated.startAt;
+    item.endAt = validated.endAt;
+    item.participantIds = validated.participantIds;
+    item.type = String(body.type || item.type || "zadanie").trim();
+    item.note = String(body.note || "").trim();
+    item.attachments = [...(item.attachments || []), ...attachments];
+    writeData(data);
+    sendJson(res, 200, item);
+    return;
+  }
+
+  if (req.method === "DELETE" && url.pathname.startsWith("/api/calendar/")) {
+    const id = url.pathname.split("/").pop();
+    const actorId = url.searchParams.get("actorId") || "";
+    const item = data.calendar.find((entry) => entry.id === id);
+    if (!item) {
+      sendJson(res, 404, { error: "Wydarzenie nie zostalo znalezione." });
+      return;
+    }
+    if (actorId !== "admin" && item.ownerId !== actorId && !(item.participantIds || []).includes(actorId)) {
+      sendJson(res, 403, { error: "Nie masz uprawnien do usuniecia tego wydarzenia." });
+      return;
+    }
+    data.calendar = data.calendar.filter((entry) => entry.id !== id);
+    writeData(data);
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
   sendJson(res, 404, { error: "Nieznana sciezka API." });
+}
+
+function serveVendor(req, res) {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const filePath = VENDOR_FILES[url.pathname];
+  if (!filePath) {
+    sendText(res, 404, "Not found");
+    return;
+  }
+  try {
+    const file = readFileSync(filePath);
+    res.writeHead(200, { "Content-Type": "text/javascript; charset=utf-8" });
+    res.end(file);
+  } catch {
+    sendText(res, 404, "Vendor file not found");
+  }
 }
 
 function serveStatic(req, res) {
@@ -539,6 +682,10 @@ initStorage();
 
 const server = http.createServer(async (req, res) => {
   try {
+    if (req.url.startsWith("/vendor/")) {
+      serveVendor(req, res);
+      return;
+    }
     if (req.url.startsWith("/api/")) {
       await handleApi(req, res);
       return;

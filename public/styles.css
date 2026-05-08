@@ -727,6 +727,81 @@ textarea:focus {
   background: #fffaf6;
 }
 
+.fullcalendar-shell {
+  padding: 14px;
+}
+
+.fc {
+  --fc-border-color: var(--line);
+  --fc-button-bg-color: var(--orange);
+  --fc-button-border-color: var(--orange);
+  --fc-button-hover-bg-color: var(--orange-dark);
+  --fc-button-hover-border-color: var(--orange-dark);
+  --fc-button-active-bg-color: var(--orange-dark);
+  --fc-button-active-border-color: var(--orange-dark);
+  --fc-today-bg-color: rgba(242, 106, 33, 0.11);
+  color: var(--ink);
+}
+
+.fc .fc-toolbar {
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.fc .fc-toolbar-title {
+  font-size: clamp(1.15rem, 3vw, 1.55rem);
+  font-weight: 900;
+}
+
+.fc .fc-button {
+  border-radius: 6px;
+  font-weight: 800;
+  text-transform: none;
+}
+
+.fc .fc-col-header-cell {
+  background: #fbfbfc;
+  padding: 8px 4px;
+}
+
+.fc .fc-daygrid-day-frame,
+.fc .fc-timegrid-slot {
+  background: #fff;
+}
+
+.fc .fc-daygrid-day-number {
+  color: #344054;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.fc .fc-event {
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.fc-akces-event {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px 3px;
+  line-height: 1.18;
+}
+
+.fc-akces-event strong,
+.fc-akces-event span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-akces-event span {
+  opacity: 0.82;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 .toast {
   position: fixed;
   right: 18px;
