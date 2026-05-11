@@ -15,6 +15,7 @@
         </a>
         <nav class="nav-tabs" aria-label="Menu glowne">
           <button class="nav-button is-active" data-view="start">Start</button>
+          <button class="nav-button" data-view="startup-card">Karta Startupu</button>
           <button class="nav-button" data-view="expenses">Wydatki</button>
           <button class="nav-button" data-view="documents">Dokumenty</button>
           <button class="nav-button" data-view="calendar">Kalendarz</button>
@@ -22,37 +23,20 @@
           <button class="nav-button" data-view="tutorial">Samouczek</button>
           <button class="nav-button" data-view="settings">Ustawienia</button>
         </nav>
+        <div class="top-context" aria-label="Kontekst danych">
+          <div class="field compact">
+            <label for="actor-select">Dzialam jako</label>
+            <select id="actor-select"></select>
+          </div>
+          <div class="field compact">
+            <label for="scope-select">Zakres danych</label>
+            <select id="scope-select"></select>
+          </div>
+        </div>
       </header>
 
       <main class="workspace">
         <section class="content" id="app"></section>
-        <aside class="beneficiary-panel" aria-label="Wybor beneficjenta">
-          <div class="panel-header">
-            <p class="eyebrow">Aktywny widok</p>
-            <h2 id="active-beneficiary-name">ADMIN</h2>
-          </div>
-          <div class="field">
-            <label for="beneficiary-select">Beneficjent</label>
-            <select id="beneficiary-select"></select>
-          </div>
-          <p class="context-note" id="beneficiary-context">
-            ADMIN widzi dane wszystkich beneficjentow i moze zarzadzac statusem wydatkow.
-          </p>
-          <div class="mini-stats">
-            <div>
-              <strong id="stat-expenses">0</strong>
-              <span>wydatki</span>
-            </div>
-            <div>
-              <strong id="stat-documents">0</strong>
-              <span>dokumenty</span>
-            </div>
-            <div>
-              <strong id="stat-calendar">0</strong>
-              <span>terminy</span>
-            </div>
-          </div>
-        </aside>
       </main>
     </div>
 
