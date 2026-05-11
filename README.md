@@ -12,7 +12,7 @@ npm start
 Aplikacja startuje domyslnie pod adresem:
 
 ```text
-http://localhost:3000
+http://localhost:3001
 ```
 
 ## Dane lokalne

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 3001);
 const PUBLIC_DIR = join(__dirname, "public");
 const DATA_DIR = join(__dirname, "local-data");
 const DATA_FILE = join(DATA_DIR, "data.json");
