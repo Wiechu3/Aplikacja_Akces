@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
+import * as XLSX from "xlsx";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const PORT = Number(process.env.PORT || 3001);
@@ -55,7 +56,9 @@ const mimeTypes = {
 const startupCardFields = [
   "companyName",
   "acronym",
-  "taxId",
+  "nip",
+  "krs",
+  "regon",
   "contactPeople",
   "mailingAddress",
   "projectSupervisor",
@@ -98,7 +101,9 @@ function emptyStartupCard(beneficiary = {}) {
     beneficiaryId: beneficiary.id || "",
     companyName: beneficiary.name || "",
     acronym: "",
-    taxId: "",
+    nip: "",
+    krs: "",
+    regon: "",
     contactPeople: "",
     mailingAddress: "",
     projectSupervisor: "",
@@ -351,9 +356,14 @@ function normalizeStartupCards(data) {
   const cards = data.startupCards && typeof data.startupCards === "object" ? data.startupCards : {};
   for (const beneficiary of data.beneficiaries || []) {
     if (beneficiary.id === "admin") continue;
+    const existing = cards[beneficiary.id] || {};
+    const { taxId, ...rest } = existing;
     cards[beneficiary.id] = {
       ...emptyStartupCard(beneficiary),
-      ...(cards[beneficiary.id] || {}),
+      ...rest,
+      nip: String(existing.nip || taxId || ""),
+      krs: String(existing.krs || ""),
+      regon: String(existing.regon || ""),
       beneficiaryId: beneficiary.id
     };
   }
@@ -500,11 +510,7 @@ function saveBase64Files(beneficiary, files = [], folder = "uploads", kind = "at
     .filter(Boolean);
 }
 
-function csvLine(row) {
-  return row.map((cell) => `"${String(cell ?? "").replaceAll('"', '""')}"`).join(";");
-}
-
-function exportExpensesCsv(data, actorId, scopeBeneficiaryId) {
+function exportExpensesRows(data, actorId, scopeBeneficiaryId) {
   const rows = selectedData(data, actorId, scopeBeneficiaryId).expenses.map((expense) => {
     const beneficiary = data.beneficiaries.find((item) => item.id === expense.beneficiaryId);
     return [
@@ -523,7 +529,7 @@ function exportExpensesCsv(data, actorId, scopeBeneficiaryId) {
       (expense.attachments || []).map((file) => file.fileName).join(", ")
     ];
   });
-  const header = [
+  return [[
     "Beneficjent",
     "Numer faktury",
     "Kontrahent",
@@ -537,11 +543,10 @@ function exportExpensesCsv(data, actorId, scopeBeneficiaryId) {
     "Cel szczegolowy",
     "Status",
     "Zalaczniki"
-  ];
-  return [header, ...rows].map(csvLine).join("\n");
+  ], ...rows];
 }
 
-function exportDocumentsCsv(data, actorId, scopeBeneficiaryId) {
+function exportDocumentsRows(data, actorId, scopeBeneficiaryId) {
   const rows = selectedData(data, actorId, scopeBeneficiaryId).documents.map((document) => {
     const beneficiary = data.beneficiaries.find((item) => item.id === document.beneficiaryId);
     return [
@@ -554,12 +559,10 @@ function exportDocumentsCsv(data, actorId, scopeBeneficiaryId) {
       (document.attachments || []).map((file) => file.fileName).join(", ")
     ];
   });
-  return [["Beneficjent", "Dokument", "Kategoria", "Dodane przez", "Status", "Uwagi", "Zalaczniki"], ...rows]
-    .map(csvLine)
-    .join("\n");
+  return [["Beneficjent", "Dokument", "Kategoria", "Dodane przez", "Status", "Uwagi", "Zalaczniki"], ...rows];
 }
 
-function exportCalendarCsv(data, actorId, scopeBeneficiaryId) {
+function exportCalendarRows(data, actorId, scopeBeneficiaryId) {
   const rows = selectedData(data, actorId, scopeBeneficiaryId).calendar.map((item) => {
     const beneficiary = data.beneficiaries.find((entry) => entry.id === item.beneficiaryId);
     const owner = data.beneficiaries.find((entry) => entry.id === item.ownerId);
@@ -580,15 +583,22 @@ function exportCalendarCsv(data, actorId, scopeBeneficiaryId) {
       (item.attachments || []).map((file) => file.fileName).join(", ")
     ];
   });
-  return [["Beneficjent", "Wydarzenie", "Start", "Koniec", "Dodane przez", "Uczestnicy", "Kolor", "Status", "Opis", "Zalaczniki"], ...rows]
-    .map(csvLine)
-    .join("\n");
+  return [["Beneficjent", "Wydarzenie", "Start", "Koniec", "Dodane przez", "Uczestnicy", "Kolor", "Status", "Opis", "Zalaczniki"], ...rows];
 }
 
-function exportReportCsv(data, actorId, scopeBeneficiaryId, type) {
-  if (type === "documents") return exportDocumentsCsv(data, actorId, scopeBeneficiaryId);
-  if (type === "calendar") return exportCalendarCsv(data, actorId, scopeBeneficiaryId);
-  return exportExpensesCsv(data, actorId, scopeBeneficiaryId);
+function exportReportRows(data, actorId, scopeBeneficiaryId, type) {
+  if (type === "documents") return exportDocumentsRows(data, actorId, scopeBeneficiaryId);
+  if (type === "calendar") return exportCalendarRows(data, actorId, scopeBeneficiaryId);
+  return exportExpensesRows(data, actorId, scopeBeneficiaryId);
+}
+
+function exportReportXlsx(data, actorId, scopeBeneficiaryId, type) {
+  const workbook = XLSX.utils.book_new();
+  const rows = exportReportRows(data, actorId, scopeBeneficiaryId, type);
+  const worksheet = XLSX.utils.aoa_to_sheet(rows);
+  const sheetName = type === "documents" ? "Dokumenty" : type === "calendar" ? "Kalendarz" : "Wydatki";
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
 }
 
 function validateCalendarPayload(data, body, existingEvent = null) {
@@ -608,13 +618,21 @@ function validateCalendarPayload(data, body, existingEvent = null) {
   }
 
   const knownIds = new Set(data.beneficiaries.map((item) => item.id));
+  const requestedBeneficiaryId = String(body.beneficiaryId || existingEvent?.beneficiaryId || "").trim();
   const participantIds = [...new Set(Array.isArray(body.participantIds) ? body.participantIds.filter((id) => knownIds.has(id)) : [])];
   const admin = isAdminActor(actor);
+  let beneficiaryId = "";
+
   if (admin) {
-    if (!participantIds.some((id) => id !== "admin")) {
+    beneficiaryId = requestedBeneficiaryId || participantIds.find((id) => id !== "admin") || "";
+    if (!beneficiaryId) {
       return { error: "ADMIN musi przypisac wydarzenie przynajmniej do jednego beneficjenta." };
     }
   } else {
+    beneficiaryId = actor.id;
+    if (requestedBeneficiaryId && requestedBeneficiaryId !== actor.id) {
+      return { error: "Beneficjent moze dodawac wydarzenia tylko dla siebie." };
+    }
     if (!participantIds.includes(actor.id)) participantIds.push(actor.id);
     if (!participantIds.includes("admin")) participantIds.push("admin");
   }
@@ -624,14 +642,16 @@ function validateCalendarPayload(data, body, existingEvent = null) {
     return { error: "Beneficjent moze edytowac tylko wydarzenia, w ktorych uczestniczy." };
   }
 
-  const beneficiaryId = participantIds.find((id) => id !== "admin") || body.beneficiaryId || existingEvent?.beneficiaryId;
   const beneficiary = data.beneficiaries.find((item) => item.id === beneficiaryId && item.id !== "admin");
   if (!beneficiary) {
     return { error: "Wybierz beneficjenta powiazanego z wydarzeniem." };
   }
+  if (!participantIds.includes(beneficiaryId)) {
+    participantIds.unshift(beneficiaryId);
+  }
 
   const color = CALENDAR_COLORS.has(body.color) ? body.color : existingEvent?.color || "#f26a21";
-  return { actor, beneficiary, startAt, endAt, participantIds, color };
+  return { actor, beneficiary, startAt, endAt, participantIds: [...new Set(participantIds)], color };
 }
 
 function findAttachment(data, fileId) {
@@ -690,15 +710,15 @@ async function handleApi(req, res) {
     return;
   }
 
-  if (req.method === "GET" && url.pathname.startsWith("/api/reports/") && url.pathname.endsWith(".csv")) {
+  if (req.method === "GET" && url.pathname.startsWith("/api/reports/") && url.pathname.endsWith(".xlsx")) {
     const actorId = url.searchParams.get("actorId") || "admin";
     const scopeBeneficiaryId = url.searchParams.get("scopeBeneficiaryId") || "all";
-    const type = url.pathname.split("/").pop().replace(".csv", "");
+    const type = url.pathname.split("/").pop().replace(".xlsx", "");
     res.writeHead(200, {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="akces-ncbr-${type}.csv"`
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="akces-ncbr-${type}.xlsx"`
     });
-    res.end(exportReportCsv(data, actorId, scopeBeneficiaryId, type));
+    res.end(exportReportXlsx(data, actorId, scopeBeneficiaryId, type));
     return;
   }
 

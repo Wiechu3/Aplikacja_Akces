@@ -62,7 +62,9 @@ const reportLabels = {
 const startupFields = [
   ["companyName", "Nazwa spolki"],
   ["acronym", "Akronim"],
-  ["taxId", "NIP/KRS"],
+  ["nip", "NIP"],
+  ["krs", "KRS"],
+  ["regon", "REGON"],
   ["contactPeople", "Osoby kontaktowe"],
   ["mailingAddress", "Dane do korespondencji"],
   ["projectSupervisor", "Opiekun projektu"],
@@ -77,6 +79,7 @@ const startupFields = [
 const app = document.querySelector("#app");
 const actorSelect = document.querySelector("#actor-select");
 const scopeSelect = document.querySelector("#scope-select");
+const scopeField = scopeSelect.closest(".field.compact");
 const toast = document.querySelector("#toast");
 
 function money(value) {
@@ -202,6 +205,8 @@ function renderShell() {
   actorSelect.value = state.data.beneficiaries.some((item) => item.id === actorPrevious) ? actorPrevious : "admin";
 
   if (isAdmin()) {
+    scopeField.hidden = false;
+    scopeField.style.display = "";
     scopeSelect.disabled = false;
     scopeSelect.innerHTML = `
       <option value="all">Wszyscy beneficjenci</option>
@@ -209,6 +214,8 @@ function renderShell() {
     `;
     scopeSelect.value = state.scopeBeneficiaryId;
   } else {
+    scopeField.hidden = true;
+    scopeField.style.display = "none";
     scopeSelect.disabled = true;
     scopeSelect.innerHTML = `<option value="${state.actorId}">${escapeHtml(activeActor()?.name || "Beneficjent")}</option>`;
     scopeSelect.value = state.actorId;
@@ -327,7 +334,7 @@ function renderStartupCard() {
       <div class="field ${["contactPeople", "mailingAddress", "mentors", "experts", "projectSchedule", "projectScope", "contractAttachments", "documentStatus"].includes(name) ? "is-wide" : ""}">
         <label for="startup-${name}">${label}</label>
         ${editable
-          ? `<textarea id="startup-${name}" name="${name}" ${["companyName", "acronym", "taxId", "projectSupervisor"].includes(name) ? "class=\"short-textarea\"" : ""}>${escapeHtml(card[name] || "")}</textarea>`
+          ? `<textarea id="startup-${name}" name="${name}" ${["companyName", "acronym", "nip", "krs", "regon", "projectSupervisor"].includes(name) ? "class=\"short-textarea\"" : ""}>${escapeHtml(card[name] || "")}</textarea>`
           : `<div class="readonly-box">${escapeHtml(card[name] || "-")}</div>`}
       </div>
     `)
@@ -711,9 +718,18 @@ function renderCalendarModal() {
   const event = modal.eventId ? state.data.calendar.find((item) => item.id === modal.eventId) : null;
   const startAt = event ? calendarEventStart(event) : modal.startAt;
   const endAt = event ? calendarEventEnd(event) : modal.endAt || addMinutesToDateTime(startAt, 60);
-  const defaultBeneficiary = effectiveBeneficiaryId();
+  const defaultBeneficiary = event?.beneficiaryId || effectiveBeneficiaryId() || "";
   const selectedIds = event ? calendarParticipants(event) : isAdmin() ? [defaultBeneficiary].filter(Boolean) : [state.actorId, "admin"];
   const color = event?.color || modal.color || "#f26a21";
+  const beneficiaryField = isAdmin()
+    ? `<div class="field">
+        <label for="calendar-beneficiary">Beneficjent</label>
+        <select id="calendar-beneficiary" name="beneficiaryId" required>
+          <option value="">Wybierz beneficjenta</option>
+          ${beneficiaryOptions(defaultBeneficiary)}
+        </select>
+      </div>`
+    : `<input type="hidden" name="beneficiaryId" value="${state.actorId}" />`;
 
   return `
     <div class="modal-backdrop" data-close-calendar-modal>
@@ -729,6 +745,7 @@ function renderCalendarModal() {
           <input type="hidden" name="id" value="${escapeHtml(event?.id || "")}" />
           <input type="hidden" name="actorId" value="${state.actorId}" />
           <div class="form-grid">
+            ${beneficiaryField}
             <div class="field is-wide">
               <label for="calendar-title">Nazwa wydarzenia</label>
               <input id="calendar-title" name="title" value="${escapeHtml(event?.title || "")}" required />
@@ -873,9 +890,19 @@ function renderCalendar() {
 function renderReports() {
   const totalGross = state.data.expenses.reduce((sum, expense) => sum + Number(expense.grossAmount || 0), 0);
   const approved = state.data.expenses.filter((expense) => expense.status === "zatwierdzony" || expense.status === "wyplacony").length;
-  const scopeOptions = isAdmin()
-    ? `<option value="all">Wszyscy beneficjenci</option>${beneficiaryOptions(state.scopeBeneficiaryId)}`
-    : `<option value="${state.actorId}">${escapeHtml(activeActor()?.name || "Aktualny beneficjent")}</option>`;
+  const scopeFieldMarkup = isAdmin()
+    ? `<div class="field">
+        <label for="report-scope">Zakres</label>
+        <select id="report-scope" name="scopeBeneficiaryId">
+          <option value="all">Wszyscy beneficjenci</option>
+          ${beneficiaryOptions(state.scopeBeneficiaryId)}
+        </select>
+      </div>`
+    : `<input type="hidden" name="scopeBeneficiaryId" value="${state.actorId}" />
+      <div class="field">
+        <label>Zakres</label>
+        <input value="${escapeHtml(activeActor()?.name || "Aktualny beneficjent")}" disabled />
+      </div>`;
 
   app.innerHTML = `
     ${pageHead("Raporty", "Generator raportow pozwala wybrac typ danych, zakres i format eksportu.")}
@@ -905,14 +932,11 @@ function renderReports() {
             ${Object.entries(reportLabels).map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}
           </select>
         </div>
-        <div class="field">
-          <label for="report-scope">Zakres</label>
-          <select id="report-scope" name="scopeBeneficiaryId">${scopeOptions}</select>
-        </div>
+        ${scopeFieldMarkup}
         <div class="field">
           <label for="report-format">Format</label>
           <select id="report-format" name="format">
-            <option value="csv">CSV / Excel</option>
+            <option value="xlsx">Excel (.xlsx)</option>
           </select>
         </div>
       </div>
@@ -1276,7 +1300,7 @@ document.addEventListener("submit", async (event) => {
 
     if (form.id === "report-form") {
       const payload = formDataToObject(form);
-      window.location.href = `/api/reports/${payload.type}.csv?actorId=${state.actorId}&scopeBeneficiaryId=${payload.scopeBeneficiaryId}`;
+      window.location.href = `/api/reports/${payload.type}.xlsx?actorId=${state.actorId}&scopeBeneficiaryId=${payload.scopeBeneficiaryId}`;
     }
 
     if (form.id === "beneficiary-form") {
