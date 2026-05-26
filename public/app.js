@@ -5,6 +5,8 @@ const state = {
   sidebarCollapsed: window.localStorage.getItem("akces-sidebar-collapsed") === "true",
   mobileSidebarOpen: false,
   notificationsOpen: false,
+  searchOpen: false,
+  searchQuery: "",
   addressBookOpen: false,
   addressBookFormOpen: false,
   editingContactId: "",
@@ -32,6 +34,7 @@ const state = {
   marketingContestFormOpen: false,
   marketingEditingContestId: "",
   marketingContests: [],
+  notifications: [],
   documentsTab: "contract",
   documentWorkflowDocs: [],
   showDocumentForm: false,
@@ -212,26 +215,78 @@ const attentionTasks = [
   }
 ];
 
-const akcesNotifications = [
+const defaultNotifications = [
   {
+    id: "notif-wst-correction",
     title: "Nowe uwagi do Harmonogramu Mentoringu",
-    body: "Opiekun projektu oznaczyl punkty wymagajace poprawy.",
-    time: "10 min temu"
+    description: "Opiekun projektu oznaczyl punkty wymagajace poprawy.",
+    type: "document_correction",
+    module: "documents",
+    relatedObjectId: "formal-weksel-deklaracja",
+    relatedObjectName: "Deklaracja wekslowa",
+    createdAt: "2026-05-26T15:12:00",
+    read: false,
+    actionLabel: "Przejdz do dokumentu"
   },
   {
+    id: "notif-contract-sign",
     title: "Opiekun projektu dodal komentarze",
-    body: "Komentarze zostaly dodane 2 godziny temu.",
-    time: "2 godz. temu"
+    description: "Komentarze zostaly dodane 2 godziny temu.",
+    type: "project_comment",
+    module: "documents",
+    relatedObjectId: "contract-main",
+    relatedObjectName: "Umowa akceleracyjna",
+    createdAt: "2026-05-26T14:22:00",
+    read: false,
+    actionLabel: "Przejdz do komentarzy"
   },
   {
+    id: "notif-mentor-meeting",
+    title: "Zbliza sie spotkanie mentoringowe",
+    description: "Spotkanie z Mentorem Prowadzacym odbedzie sie jutro o 10:00.",
+    type: "mentoring_meeting",
+    module: "mentoring",
+    relatedObjectId: "lead-mentor",
+    relatedObjectName: "Mentor prowadzacy",
+    createdAt: "2026-05-26T09:00:00",
+    read: false,
+    actionLabel: "Przejdz do mentoringu"
+  },
+  {
+    id: "notif-marketing-materials",
+    title: "Dodano nowe materialy od Akces",
+    description: "W module Marketing pojawil sie nowy webinar.",
+    type: "marketing_material",
+    module: "marketing",
+    relatedObjectId: "mat-1",
+    relatedObjectName: "Webinar marketingowy",
+    createdAt: "2026-05-25T11:30:00",
+    read: true,
+    actionLabel: "Przejdz do materialow"
+  },
+  {
+    id: "notif-deadline",
     title: "Przypomnienie o terminie",
-    body: "Deklaracja wekslowa powinna zostac dostarczona w najblizszych dniach.",
-    time: "dzisiaj"
+    description: "Deklaracja wekslowa powinna zostac dostarczona w najblizszych dniach.",
+    type: "deadline",
+    module: "documents",
+    relatedObjectId: "formal-weksel-deklaracja",
+    relatedObjectName: "Deklaracja wekslowa",
+    createdAt: "2026-05-25T08:15:00",
+    read: false,
+    actionLabel: "Przejdz do dokumentu"
   },
   {
+    id: "notif-document-status",
     title: "Zmieniono status dokumentu",
-    body: "Jeden z dokumentow zmienil status na do weryfikacji.",
-    time: "wczoraj"
+    description: "Umowa akceleracyjna oczekuje na podpis osoby upowaznionej.",
+    type: "document_status",
+    module: "documents",
+    relatedObjectId: "contract-main",
+    relatedObjectName: "Umowa akceleracyjna",
+    createdAt: "2026-05-24T16:40:00",
+    read: true,
+    actionLabel: "Przejdz do dokumentu"
   }
 ];
 
@@ -796,6 +851,14 @@ const currentViewLabel = document.querySelector("#current-view-label");
 const contextMenu = document.querySelector("#context-menu");
 const contextToggle = document.querySelector("[data-context-toggle]");
 const sidebarCollapse = document.querySelector("[data-sidebar-collapse]");
+const notificationMenu = document.querySelector("#notification-menu");
+const globalSearch = document.querySelector("#global-search");
+
+new MutationObserver(() => {
+  document.querySelectorAll("form").forEach((form) => {
+    form.noValidate = true;
+  });
+}).observe(app, { childList: true, subtree: true });
 
 function money(value) {
   return Number(value || 0).toLocaleString("pl-PL", {
@@ -849,10 +912,354 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function showToast(message) {
+function statusTone(status = "") {
+  const normalized = String(status).toLowerCase();
+  if (/(zaakcept|zatwierdz|podpis|zrealiz|komplet|wyplac)/.test(normalized)) return "success";
+  if (/(do poprawy|brak pliku|blad|odrzu|przekrocz)/.test(normalized)) return "danger";
+  if (/(oczekuje|w trakcie|do uzupelnienia|w weryfikacji|przekazany)/.test(normalized)) return "warning";
+  if (/(plan|now|wyslan|informac|webinar|prezentac|instrukc|grafik|konkurs|nabor)/.test(normalized)) return "info";
+  if (/(robocz|archiw|niedostep|nie dotyczy|brak)/.test(normalized)) return "neutral";
+  return "neutral";
+}
+
+function statusBadge(status, extraClass = "") {
+  const className = extraClass ? ` ${extraClass}` : "";
+  return `<span class="status-badge${className}" data-tone="${statusTone(status)}">${escapeHtml(status || "-")}</span>`;
+}
+
+function emptyState(title, description = "", action = "") {
+  return `
+    <div class="empty-state">
+      <strong>${escapeHtml(title)}</strong>
+      ${description ? `<p>${escapeHtml(description)}</p>` : ""}
+      ${action}
+    </div>
+  `;
+}
+
+function formatNotificationTime(value) {
+  return formatDateTime(value);
+}
+
+function moduleName(moduleId) {
+  return moduleLabels[moduleId] || moduleId || "Akces";
+}
+
+function notificationTone(type = "") {
+  if (type.includes("correction") || type.includes("rejected")) return "danger";
+  if (type.includes("deadline") || type.includes("status")) return "warning";
+  if (type.includes("marketing") || type.includes("meeting")) return "info";
+  return "neutral";
+}
+
+function toastTone(message = "", tone = "") {
+  if (tone) return tone;
+  const normalized = normalizeSearchText(message);
+  if (/(nie mozna|blad|wymagany|przekrocz|popraw|usunieto aktualny plik)/.test(normalized)) return "danger";
+  if (/(zapisano|dodano|podmieniono|wygenerowano|zaktualizowano|zmieniono|wykonano)/.test(normalized)) return "success";
+  return "info";
+}
+
+function showToast(message, tone = "") {
+  const resolvedTone = toastTone(message, tone);
   toast.textContent = message;
-  toast.classList.add("is-visible");
-  window.setTimeout(() => toast.classList.remove("is-visible"), 2800);
+  toast.className = `toast is-visible is-${resolvedTone}`;
+  window.clearTimeout(showToast.hideTimer);
+  showToast.hideTimer = window.setTimeout(() => {
+    toast.classList.remove("is-visible");
+  }, 2800);
+}
+
+function renderSkeleton() {
+  return `
+    <section class="skeleton-layout" aria-label="Ladowanie danych">
+      <div class="skeleton-card"></div>
+      <div class="summary-strip">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+      <div class="skeleton-card"></div>
+    </section>
+  `;
+}
+
+function renderNotificationMenu() {
+  if (!notificationMenu) return;
+  const unreadCount = state.notifications.filter((item) => !item.read).length;
+  const notifications = state.notifications.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  notificationMenu.innerHTML = `
+    <button class="notification-button" type="button" data-notifications-toggle aria-label="Komunikaty od Akces" aria-expanded="${state.notificationsOpen}">
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M18 16v-5a6 6 0 0 0-12 0v5l-2 2h16l-2-2Z"></path>
+        <path d="M10 21h4"></path>
+      </svg>
+      ${unreadCount ? `<strong>${unreadCount}</strong>` : ""}
+    </button>
+    <div class="notifications-panel" ${state.notificationsOpen ? "" : "hidden"}>
+      <div class="notifications-head">
+        <div>
+          <h2>Powiadomienia</h2>
+          <p>${unreadCount ? `${unreadCount} nieprzeczytane` : "Wszystko przeczytane"}</p>
+        </div>
+        <button class="button ghost compact-button" type="button" data-notifications-mark-all>Oznacz wszystkie</button>
+      </div>
+      <div class="notifications-list">
+        ${notifications.map((item) => `
+          <article class="${item.read ? "is-read" : "is-unread"}" data-notification-id="${escapeHtml(item.id)}">
+            <div>
+              ${statusBadge(moduleName(item.module), `notification-type tone-${notificationTone(item.type)}`)}
+              <strong>${escapeHtml(item.title)}</strong>
+              <p>${escapeHtml(item.description)}</p>
+              <span>${escapeHtml(item.relatedObjectName || moduleName(item.module))} / ${formatNotificationTime(item.createdAt)}</span>
+            </div>
+            <button class="button secondary compact-button" type="button" data-notification-open="${escapeHtml(item.id)}">${escapeHtml(item.actionLabel || "Przejdz")}</button>
+          </article>
+        `).join("") || emptyState("Brak powiadomien", "Historia powiadomien pojawi sie tutaj.")}
+      </div>
+      <div class="notifications-actions">
+        <button class="button secondary compact-button" type="button" data-notifications-history>Zobacz wszystkie powiadomienia</button>
+        <button class="button ghost compact-button" type="button" data-notifications-clear-read>Wyczysc przeczytane</button>
+      </div>
+    </div>
+  `;
+}
+
+function normalizeSearchText(value = "") {
+  return String(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u0142/g, "l")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function searchResult(item) {
+  const status = item.status ? statusBadge(item.status) : "";
+  return `
+    <article class="search-result-item" data-search-result="${escapeHtml(item.id)}">
+      <div>
+        <strong>${escapeHtml(item.title)}</strong>
+        <p>${escapeHtml(item.description || "")}</p>
+        <span>${escapeHtml(item.type)} / ${escapeHtml(moduleName(item.module))}</span>
+      </div>
+      ${status}
+      <button class="button secondary compact-button" type="button" data-search-open="${escapeHtml(item.id)}">Przejdz</button>
+    </article>
+  `;
+}
+
+function buildSearchIndex() {
+  const items = [];
+  state.documentWorkflowDocs.forEach((document) => {
+    items.push({
+      id: `document:${document.id}`,
+      title: `${document.title}${document.month && !document.title.includes(document.month) ? ` - ${document.month}` : ""}`,
+      type: "Dokument",
+      module: "documents",
+      relatedObjectId: document.id,
+      description: document.currentStep || document.description || "",
+      status: document.status,
+      keywords: [document.typeLabel, document.status, document.month, document.currentFile?.name, document.description].join(" ")
+    });
+  });
+  state.addressBookContacts.forEach((contact) => {
+    items.push({
+      id: `contact:${contact.id}`,
+      title: contact.name,
+      type: "Kontakt",
+      module: "start",
+      relatedObjectId: contact.id,
+      description: `${contact.position} / ${contact.organization}`,
+      status: contact.category,
+      keywords: [contact.email, contact.phone, contact.description, contact.category].join(" ")
+    });
+  });
+  state.mentoringMentors.forEach((mentor) => {
+    items.push({
+      id: `mentor:${mentor.id}`,
+      title: mentor.name,
+      type: mentor.type === "lead" ? "Mentor prowadzacy" : "Mentor merytoryczny",
+      module: "mentoring",
+      relatedObjectId: mentor.id,
+      description: mentor.specialization,
+      status: `${mentorUsedHours(mentor)} / ${mentor.limit} h`,
+      keywords: [mentor.role, mentor.specialization, mentor.email, mentor.phone].join(" ")
+    });
+    mentor.documents.reports.forEach((report) => {
+      items.push({
+        id: `report:${mentor.id}:${report.month}`,
+        title: `Sprawozdanie - ${report.month}`,
+        type: "Sprawozdanie",
+        module: "mentoring",
+        relatedObjectId: mentor.id,
+        description: `Mentor: ${mentor.name}`,
+        status: report.status,
+        keywords: [report.month, report.status, mentor.name].join(" ")
+      });
+    });
+  });
+  state.marketingContests.forEach((contest) => {
+    items.push({
+      id: `contest:${contest.id}`,
+      title: contest.name,
+      type: "Konkurs",
+      module: "marketing",
+      relatedObjectId: contest.id,
+      description: contest.deadline ? `Termin zgloszen: ${formatDate(contest.deadline)}` : contest.description,
+      status: contest.status,
+      keywords: [contest.organizer, contest.type, contest.description, contest.audience, contest.requiredMaterials, contest.notes].join(" ")
+    });
+  });
+  defaultMarketingPublications.forEach((publication) => {
+    items.push({
+      id: `publication:${publication.id}`,
+      title: publication.title,
+      type: "Publikacja",
+      module: "marketing",
+      relatedObjectId: publication.id,
+      description: publication.description,
+      status: publication.status,
+      keywords: [publication.type, publication.plannedAt, publication.fileName].join(" ")
+    });
+  });
+  defaultAkcesMarketingMaterials.forEach((material) => {
+    items.push({
+      id: `material:${material.id}`,
+      title: material.title,
+      type: "Material od Akces",
+      module: "marketing",
+      relatedObjectId: material.id,
+      description: material.description,
+      status: material.type,
+      keywords: [material.type, material.addedAt].join(" ")
+    });
+  });
+  state.marketingPackageItems.forEach((item) => {
+    items.push({
+      id: `package:${item.id}`,
+      title: item.title,
+      type: "Paczka marketingowa",
+      module: "marketing",
+      relatedObjectId: item.id,
+      description: item.fileName || item.link || item.text || "Material marketingowy",
+      status: item.status,
+      keywords: [item.fileName, item.link, item.text].join(" ")
+    });
+  });
+  attentionTasks.forEach((task, index) => {
+    items.push({
+      id: `task:${index}`,
+      title: task.title,
+      type: "Zadanie",
+      module: task.view,
+      relatedObjectId: "",
+      description: task.description,
+      status: task.status,
+      keywords: [task.due, task.action].join(" ")
+    });
+  });
+  state.data.expenses.forEach((expense) => {
+    items.push({
+      id: `expense:${expense.id}`,
+      title: expense.invoiceNumber || expense.contractor || "Wydatek",
+      type: "Wydatek",
+      module: "expenses",
+      relatedObjectId: expense.id,
+      description: `${expense.contractor || "-"} / ${money(expense.grossAmount)}`,
+      status: statusLabels[expense.status] || expense.status,
+      keywords: [expense.description, expense.priorityGoal, expense.detailedGoal, expense.contractor].join(" ")
+    });
+  });
+  return items.map((item) => ({
+    ...item,
+    haystack: normalizeSearchText([item.title, item.description, item.status, item.module, item.type, item.keywords].join(" "))
+  }));
+}
+
+function currentSearchResults() {
+  const query = normalizeSearchText(state.searchQuery);
+  if (!query) return [];
+  const terms = query.split(/\s+/).filter(Boolean);
+  return buildSearchIndex()
+    .filter((item) => terms.every((term) => item.haystack.includes(term)))
+    .slice(0, 8);
+}
+
+function renderGlobalSearch() {
+  if (!globalSearch) return;
+  const results = currentSearchResults();
+  const showPanel = state.searchOpen && state.searchQuery.trim().length > 0;
+  globalSearch.innerHTML = `
+    <label class="global-search-box">
+      <span aria-hidden="true">S</span>
+      <input id="global-search-input" type="search" value="${escapeHtml(state.searchQuery)}" placeholder="Szukaj dokumentow, mentorow, kontaktow..." autocomplete="off" />
+    </label>
+    <div class="search-results-panel" ${showPanel ? "" : "hidden"}>
+      ${results.length ? results.map(searchResult).join("") : emptyState("Brak wynikow dla podanej frazy", "Sprobuj wpisac nazwe dokumentu, mentora, konkursu albo status.")}
+    </div>
+  `;
+}
+
+function goToRelatedItem(moduleId, relatedObjectId = "") {
+  state.notificationsOpen = false;
+  state.searchOpen = false;
+  if (moduleId === "documents") {
+    const document = workflowDocument(relatedObjectId);
+    if (document) state.documentsTab = document.documentType || "contract";
+    setView("documents");
+  } else if (moduleId === "mentoring") {
+    if (relatedObjectId) state.mentoringActiveMentorId = relatedObjectId;
+    state.mentoringMainTab = mentoringMentor(relatedObjectId)?.type === "subject" ? "subject" : "lead";
+    state.mentoringSection = "info";
+    setView("mentoring");
+  } else if (moduleId === "marketing") {
+    if (String(relatedObjectId).startsWith("mat-")) state.marketingTab = "materials";
+    else if (String(relatedObjectId).startsWith("pub-")) state.marketingTab = "publications";
+    else if (String(relatedObjectId).startsWith("contest")) state.marketingTab = "contests";
+    else state.marketingTab = "package";
+    setView("marketing");
+  } else if (moduleId === "start") {
+    setView("start");
+    state.addressBookOpen = true;
+    renderStart();
+  } else {
+    setView(moduleId || "start");
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function openNotification(id) {
+  const notification = state.notifications.find((item) => item.id === id);
+  if (!notification) return;
+  notification.read = true;
+  goToRelatedItem(notification.module, notification.relatedObjectId);
+  renderNotificationMenu();
+}
+
+function addNotification({ title, description, type, module, relatedObjectId = "", relatedObjectName = "", actionLabel = "Przejdz" }) {
+  state.notifications.unshift({
+    id: `notif-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    title,
+    description,
+    type,
+    module,
+    relatedObjectId,
+    relatedObjectName,
+    createdAt: new Date().toISOString(),
+    read: false,
+    actionLabel
+  });
+  renderNotificationMenu();
+}
+
+function openSearchResult(id) {
+  const result = buildSearchIndex().find((item) => item.id === id);
+  if (!result) return;
+  state.searchQuery = "";
+  goToRelatedItem(result.module, result.relatedObjectId);
+  renderGlobalSearch();
 }
 
 async function api(path, options = {}) {
@@ -900,9 +1307,15 @@ function canAdminEditSelectedBeneficiary() {
 }
 
 async function loadState() {
+  if (app && !app.innerHTML.trim()) {
+    app.innerHTML = renderSkeleton();
+  }
   state.data = await api(`/api/state?actorId=${encodeURIComponent(state.actorId)}&scopeBeneficiaryId=${encodeURIComponent(state.scopeBeneficiaryId)}`);
   state.actorId = state.data.actorId || state.actorId;
   state.scopeBeneficiaryId = state.data.scopeBeneficiaryId || state.scopeBeneficiaryId;
+  if (!state.notifications.length) {
+    state.notifications = defaultNotifications.map((notification) => ({ ...notification }));
+  }
   if (!state.startupCardBeneficiaryId || !state.data.startupCards[state.startupCardBeneficiaryId]) {
     state.startupCardBeneficiaryId = effectiveBeneficiaryId() || Object.keys(state.data.startupCards)[0] || "";
   }
@@ -928,6 +1341,8 @@ function syncShellState() {
     sidebarCollapse.setAttribute("aria-label", state.sidebarCollapsed ? "Rozwin panel boczny" : "Zwin panel boczny");
     sidebarCollapse.querySelector("span").textContent = state.sidebarCollapsed ? ">" : "<";
   }
+  renderNotificationMenu();
+  renderGlobalSearch();
 }
 
 function setView(view) {
@@ -1269,7 +1684,7 @@ function renderAddressBookModal() {
                     <h3>${escapeHtml(contact.name)}</h3>
                     <p>${escapeHtml(contact.position)}</p>
                   </div>
-                  <span class="status-pill">${escapeHtml(contact.category)}</span>
+                  ${statusBadge(contact.category)}
                 </div>
                 <p class="meta">
                   <span>${escapeHtml(contact.organization)}</span>
@@ -1279,11 +1694,11 @@ function renderAddressBookModal() {
                 <p class="contact-description">${escapeHtml(contact.description || "Kontakt pomocniczy.")}</p>
                 <div class="contact-actions">
                   <button class="button secondary" type="button" data-edit-contact="${escapeHtml(contact.id)}">Edytuj</button>
-                  <button class="button ghost" type="button" data-delete-contact="${escapeHtml(contact.id)}">Usun</button>
+                  <button class="button danger" type="button" data-delete-contact="${escapeHtml(contact.id)}">Usun</button>
                 </div>
               </div>
             </article>
-          `).join("") || `<div class="empty-state card">Brak kontaktow dla wybranych filtrow.</div>`}
+          `).join("") || emptyState("Brak kontaktow", "Zmien filtr lub dodaj nowy kontakt do ksiazki teleadresowej.", `<button class="button" type="button" data-add-contact>Dodaj kontakt</button>`)}
         </div>
       </section>
     </div>
@@ -1293,35 +1708,25 @@ function renderAddressBookModal() {
 function renderStart() {
   const dashboard = projectDashboardData();
   const advisor = state.addressBookContacts.find((contact) => contact.id === "opiekun-projektu") || state.addressBookContacts[0];
-  const unreadCount = akcesNotifications.length;
+  const documentsAttention = state.documentWorkflowDocs.filter((document) => ["Do poprawy", "Oczekuje na podpis Opiekuna Projektu", "Oczekuje na podpis osoby upowaznionej"].includes(document.status)).length;
+  const leadMentor = mentoringMentors("lead")[0];
+  const nextCalendarItem = state.data.calendar.slice().sort((a, b) => calendarEventStart(a).localeCompare(calendarEventStart(b)))[0];
   app.innerHTML = `
     <section class="beneficiary-dashboard">
       <div class="dashboard-toolbar">
         <div>
           <p class="eyebrow">${escapeHtml(currentScopeLabel())}</p>
           <h1>Start</h1>
-        </div>
-        <div class="notification-menu">
-          <button class="notification-button" type="button" data-notifications-toggle aria-expanded="${state.notificationsOpen}">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M18 16v-5a6 6 0 0 0-12 0v5l-2 2h16l-2-2Z"></path>
-              <path d="M10 21h4"></path>
-            </svg>
-            <strong>${unreadCount}</strong>
-          </button>
-          <div class="notifications-panel" ${state.notificationsOpen ? "" : "hidden"}>
-            <h2>Komunikaty od Akces</h2>
-            ${akcesNotifications.map((item) => `
-              <article>
-                <strong>${escapeHtml(item.title)}</strong>
-                <p>${escapeHtml(item.body)}</p>
-                <span>${escapeHtml(item.time)}</span>
-              </article>
-            `).join("")}
-            <button class="button secondary" type="button">Zobacz wszystkie komunikaty</button>
-          </div>
+          <p class="context-note">Najwazniejsze zadania, terminy i status programu w jednym miejscu.</p>
         </div>
       </div>
+
+      <section class="summary-strip start-summary">
+        <article><span>Priorytety</span><strong>${attentionTasks.length}</strong></article>
+        <article><span>Dokumenty wymagajace uwagi</span><strong>${documentsAttention}</strong></article>
+        <article><span>Mentor prowadzacy</span><strong>${mentorUsedHours(leadMentor)} / ${leadMentor.limit} h</strong></article>
+        <article><span>Najblizszy termin</span><strong>${nextCalendarItem ? formatDate(calendarEventStart(nextCalendarItem).slice(0, 10)) : "-"}</strong></article>
+      </section>
 
       <section class="welcome-panel">
         <div>
@@ -1334,7 +1739,7 @@ function renderStart() {
           <div><dt>Etap</dt><dd>${escapeHtml(accelerationProject.stage)}</dd></div>
           <div><dt>Okres akceleracji</dt><dd>${escapeHtml(accelerationProject.period)}</dd></div>
           <div><dt>Opiekun projektu</dt><dd>${escapeHtml(dashboard.supervisor)}</dd></div>
-          <div><dt>Status</dt><dd>${escapeHtml(accelerationProject.status)}</dd></div>
+          <div><dt>Status</dt><dd>${statusBadge(accelerationProject.status)}</dd></div>
         </dl>
         <div class="progress-block" aria-label="Postep akceleracji">
           <div>
@@ -1357,7 +1762,7 @@ function renderStart() {
             ${attentionTasks.map((task) => `
               <article class="task-card">
                 <div>
-                  <span class="status-pill">${escapeHtml(task.status)}</span>
+                  ${statusBadge(task.status)}
                   <h3>${escapeHtml(task.title)}</h3>
                   <p>${escapeHtml(task.description)}</p>
                   ${task.due ? `<span class="task-due">Termin: ${escapeHtml(task.due)}</span>` : ""}
@@ -1502,7 +1907,7 @@ function renderStartupProfileContent(profile) {
           <article class="contact-person-card">
             <div class="contact-avatar" aria-hidden="true">${escapeHtml(initials(person.name))}</div>
             <div>
-              <span class="status-pill">${escapeHtml(person.type)}</span>
+              ${statusBadge(person.type)}
               <h3>${escapeHtml(person.name)}</h3>
               <p>${escapeHtml(person.function)} / ${escapeHtml(person.projectRole)}</p>
               <dl>
@@ -1554,7 +1959,7 @@ function renderStartupCard() {
         </div>
         <div class="summary-facts">
           <article><span>Akronim</span><strong>${escapeHtml(profile.summary.acronym)}</strong></article>
-          <article><span>Status</span><strong>${escapeHtml(profile.summary.programStatus)}</strong></article>
+          <article><span>Status</span><strong>${statusBadge(profile.summary.programStatus)}</strong></article>
           <article><span>Program</span><strong>${escapeHtml(profile.summary.program)}</strong></article>
           <article><span>Opiekun projektu</span><strong>${escapeHtml(profile.summary.supervisor)}</strong></article>
         </div>
@@ -1585,11 +1990,14 @@ function renderStartupCard() {
 function renderExpenses() {
   const totalNet = state.data.expenses.reduce((sum, expense) => sum + Number(expense.netAmount || 0), 0);
   const totalGross = state.data.expenses.reduce((sum, expense) => sum + Number(expense.grossAmount || 0), 0);
+  const pending = state.data.expenses.filter((expense) => ["przekazany-do-weryfikacji", "przekazany-do-ksiegowosci"].includes(expense.status)).length;
+  const approvedCount = state.data.expenses.filter((expense) => ["zatwierdzony", "wyplacony"].includes(expense.status)).length;
+  const rejectedCount = state.data.expenses.filter((expense) => expense.status === "odrzucony").length;
   const rows = state.data.expenses.map((expense) => {
     const beneficiary = getBeneficiary(expense.beneficiaryId);
     const statusControl = isAdmin()
       ? `<select data-status-expense="${expense.id}">${expenseStatusOptions.map((status) => `<option value="${status}" ${status === expense.status ? "selected" : ""}>${statusLabels[status]}</option>`).join("")}</select>`
-      : `<span class="status-pill" data-status="${expense.status}">${statusLabels[expense.status] || expense.status}</span>`;
+      : statusBadge(statusLabels[expense.status] || expense.status);
     return `
       <tr data-priority="${escapeHtml(expense.priorityGoal)}" data-detail="${escapeHtml(expense.detailedGoal)}">
         <td><strong>${escapeHtml(beneficiary?.name || "-")}</strong></td>
@@ -1618,9 +2026,12 @@ function renderExpenses() {
       `<button class="button" data-go="add-expense">Dodaj wydatek</button>`
     )}
     <section class="summary-strip">
-      <article><span>Grant i wydatki</span><strong>${state.data.expenses.length}</strong></article>
+      <article><span>Liczba wydatkow</span><strong>${state.data.expenses.length}</strong></article>
       <article><span>Razem netto</span><strong>${money(totalNet)}</strong></article>
       <article><span>Razem brutto</span><strong>${money(totalGross)}</strong></article>
+      <article><span>Do weryfikacji</span><strong>${pending}</strong></article>
+      <article><span>Zaakceptowane</span><strong>${approvedCount}</strong></article>
+      <article><span>Odrzucone</span><strong>${rejectedCount}</strong></article>
     </section>
     <section class="table-shell">
       <div class="table-tools compact-tools">
@@ -1669,7 +2080,7 @@ function renderExpenses() {
               <th>Status</th>
             </tr>
           </thead>
-          <tbody id="expenses-body">${rows.join("") || `<tr><td colspan="13" class="empty-state">Brak wydatkow w tym zakresie.</td></tr>`}</tbody>
+          <tbody id="expenses-body">${rows.join("") || `<tr><td colspan="13">${emptyState("Brak wydatkow", "Dodaj pierwszy wydatek albo zmien filtry listy.", `<button class="button" type="button" data-go="add-expense">Dodaj wydatek</button>`)}</td></tr>`}</tbody>
         </table>
       </div>
     </section>
@@ -1779,13 +2190,6 @@ function workflowDocumentsForTab() {
   return state.documentWorkflowDocs.filter((document) => document.documentType === state.documentsTab && document.status !== "Archiwalny");
 }
 
-function documentStatusTone(status) {
-  if (["Podpisany przez wszystkie wymagane osoby", "Zaakceptowany"].includes(status)) return "success";
-  if (["Do poprawy", "Oczekuje na dodanie poprawnego pliku"].includes(status)) return "danger";
-  if (status === "Archiwalny") return "neutral";
-  return "warning";
-}
-
 function renderSignaturePath(document) {
   return `
     <div class="signature-path">
@@ -1848,7 +2252,7 @@ function renderDocumentUpload(document) {
       <input id="upload-${escapeHtml(document.id)}" name="pdfFile" type="file" accept="application/pdf,.pdf" required />
       <div class="contact-actions">
         <button class="button secondary" type="submit">${document.currentFile ? "Podmien plik PDF" : "Dodaj plik PDF"}</button>
-        ${document.currentFile ? `<button class="button ghost" type="button" data-remove-document-file="${escapeHtml(document.id)}">Usun aktualny plik</button>` : ""}
+        ${document.currentFile ? `<button class="button danger" type="button" data-remove-document-file="${escapeHtml(document.id)}">Usun aktualny plik</button>` : ""}
       </div>
     </form>
   `;
@@ -1858,11 +2262,11 @@ function renderDocumentActions(document) {
   if (document.status === "Archiwalny") return "";
   const adminActions = isAdmin() ? `
     <button class="button secondary" type="button" data-document-action="verify" data-document-id="${escapeHtml(document.id)}">Zweryfikuj dokument</button>
-    <button class="button secondary" type="button" data-document-action="return" data-document-id="${escapeHtml(document.id)}">Zwroc do poprawy</button>
+    <button class="button danger" type="button" data-document-action="return" data-document-id="${escapeHtml(document.id)}">Zwroc do poprawy</button>
     <button class="button secondary" type="button" data-document-action="project-sign" data-document-id="${escapeHtml(document.id)}">Podpisano jako Opiekun Projektu</button>
     <button class="button secondary" type="button" data-document-action="authorized-sign" data-document-id="${escapeHtml(document.id)}">Dodaj podpis osoby upowaznionej</button>
     <button class="button ghost" type="button" data-document-action="complete" data-document-id="${escapeHtml(document.id)}">Oznacz jako podpisany przez wszystkie osoby</button>
-    <button class="button ghost" type="button" data-document-action="archive" data-document-id="${escapeHtml(document.id)}">Przenies do archiwum</button>
+    <button class="button danger" type="button" data-document-action="archive" data-document-id="${escapeHtml(document.id)}">Przenies do archiwum</button>
     <div class="field emergency-status">
       <label>Awaryjna zmiana statusu Admina</label>
       <select data-document-emergency-status="${escapeHtml(document.id)}">
@@ -1931,7 +2335,7 @@ function renderDocumentCard(document) {
           <h2>${escapeHtml(document.title)}</h2>
           ${document.description ? `<p>${escapeHtml(document.description)}</p>` : ""}
         </div>
-        <span class="status-pill document-status" data-tone="${documentStatusTone(document.status)}">${escapeHtml(document.status)}</span>
+        ${statusBadge(document.status, "document-status")}
       </div>
       <div class="current-step">
         <span>Aktualny krok procesu</span>
@@ -1996,7 +2400,7 @@ function renderDocuments() {
         <p>Dokumenty sa pogrupowane po typie. Status, aktualny krok i osoba odpowiedzialna za kolejny ruch sa widoczne na karcie dokumentu.</p>
       </section>
       <section class="workflow-doc-list">
-        ${documents.map(renderDocumentCard).join("") || `<div class="empty-state card">Brak dokumentow w tej sekcji.</div>`}
+        ${documents.map(renderDocumentCard).join("") || emptyState("Brak dokumentow w tej sekcji", "Dodaj pierwszy plik PDF, aby rozpoczac obieg dokumentu.", `<button class="button" type="button" data-documents-tab="contract">Przejdz do umow</button>`)}
       </section>
     </section>
   `;
@@ -2121,7 +2525,7 @@ function renderCalendarModal() {
           </div>
           <div class="form-actions">
             <button class="button" type="submit">${event ? "Zapisz zmiany" : "Dodaj wydarzenie"}</button>
-            ${event ? `<button class="button ghost" type="button" data-delete-calendar-event="${event.id}">Usun</button>` : ""}
+            ${event ? `<button class="button danger" type="button" data-delete-calendar-event="${event.id}">Usun</button>` : ""}
           </div>
         </form>
       </section>
@@ -2133,7 +2537,7 @@ function mountFullCalendar() {
   const element = document.querySelector("#fullcalendar");
   if (!element) return;
   if (!window.FullCalendar) {
-    element.innerHTML = `<div class="empty-state">Nie udalo sie zaladowac biblioteki kalendarza.</div>`;
+    element.innerHTML = emptyState("Nie udalo sie zaladowac kalendarza", "Odswiez aplikacje lub sprawdz dostepnosc biblioteki kalendarza.");
     return;
   }
 
@@ -2450,7 +2854,7 @@ function renderMentorSchedule(mentor) {
         return `
           <article class="mentoring-goal-card">
             <div>
-              <span class="status-pill">${escapeHtml(goal.status)}</span>
+              ${statusBadge(goal.status)}
               <h3>${escapeHtml(goal.name)}</h3>
               <p>${escapeHtml(goal.description)}</p>
               <dl class="mentor-facts compact">
@@ -2463,7 +2867,7 @@ function renderMentorSchedule(mentor) {
             </div>
             <div class="contact-actions">
               <button class="button secondary" type="button" data-edit-goal="${escapeHtml(goal.id)}">Edytuj</button>
-              <button class="button ghost" type="button" data-delete-goal="${escapeHtml(goal.id)}">Usun</button>
+              <button class="button danger" type="button" data-delete-goal="${escapeHtml(goal.id)}">Usun</button>
             </div>
           </article>
         `;
@@ -2474,9 +2878,16 @@ function renderMentorSchedule(mentor) {
 
 function renderEntryForm(mentor) {
   if (!state.mentoringEntryFormOpen) return "";
+  const used = mentorUsedHours(mentor);
+  const subjectUsed = subjectUsedHours();
   return `
     <form class="mentoring-inline-form" id="mentoring-entry-form">
       <input type="hidden" name="mentorId" value="${escapeHtml(mentor.id)}" />
+      <div class="validation-hint">
+        ${mentor.type === "lead"
+          ? `Mentor prowadzacy: wykorzystano ${used} / 65 h. Pozostalo ${Math.max(0, 65 - used)} h.`
+          : `Ten mentor: ${used} / 10 h. Mentorzy merytoryczni lacznie: ${subjectUsed} / 60 h.`}
+      </div>
       <div class="form-grid">
         ${profileEditField("date", "Data", dateKey(new Date()))}
         ${profileEditField("startTime", "Godzina rozpoczecia", "10:00")}
@@ -2542,7 +2953,7 @@ function renderMentorHours(mentor) {
         return `
           <article class="mentoring-entry-card">
             <div>
-              <span class="status-pill">${escapeHtml(entry.status)}</span>
+              ${statusBadge(entry.status)}
               <h3>${formatDate(entry.date)} ${escapeHtml(entry.startTime || "")}-${escapeHtml(entry.endTime || "")}</h3>
               <p>${escapeHtml(entry.description || "Brak opisu.")}</p>
               <dl class="mentor-facts compact">
@@ -2554,7 +2965,7 @@ function renderMentorHours(mentor) {
             </div>
           </article>
         `;
-      }).join("") || `<div class="empty-state card">Brak wpisow realizacji godzin.</div>`}
+      }).join("") || emptyState("Brak wpisow realizacji godzin", "Dodaj spotkanie lub realizacje, aby aktualizowac wykorzystanie godzin mentora.", `<button class="button" type="button" data-open-entry-form>Dodaj realizacje</button>`)}
     </div>
   `;
 }
@@ -2590,7 +3001,7 @@ function renderMentorDocuments(mentor) {
       ${mentor.documents.reports.map((report) => `
         <article class="monthly-report-card">
           <div>
-            <span class="status-pill">${escapeHtml(report.status)}</span>
+            ${statusBadge(report.status)}
             <h3>${escapeHtml(report.month)}</h3>
             <p>Liczba godzin w miesiacu: <strong>${monthHours(mentor, report.month)} h</strong></p>
           </div>
@@ -2719,7 +3130,7 @@ function renderMarketingSummary() {
         <p>W tym miejscu znajdziesz materialy potrzebne do komunikacji i promocji startupu w ramach programu Akces NCBR.</p>
       </div>
       <div class="marketing-status-card">
-        <span class="status-pill">${packageStats.status}</span>
+        ${statusBadge(packageStats.status)}
         <strong>Paczka marketingowa: ${packageStats.added}/${packageStats.total} materialow dodanych</strong>
         ${progressBar(packageStats.added, packageStats.total)}
       </div>
@@ -2755,10 +3166,10 @@ function renderMarketingPackage() {
             <input type="hidden" name="id" value="${escapeHtml(item.id)}" />
             <div class="marketing-card-head">
               <div>
-                <span class="status-pill">${escapeHtml(item.status)}</span>
+                ${statusBadge(item.status)}
                 <h3>${escapeHtml(item.title)}</h3>
               </div>
-              <button class="button ghost" type="button" data-remove-marketing-package="${escapeHtml(item.id)}">Usun</button>
+              <button class="button danger" type="button" data-remove-marketing-package="${escapeHtml(item.id)}">Usun</button>
             </div>
             <div class="field">
               <label>Status</label>
@@ -2878,7 +3289,7 @@ function renderAkcesMaterials() {
       <div class="marketing-card-grid">
         ${filtered.map((material) => `
           <article class="marketing-info-card">
-            <span class="status-pill">${escapeHtml(material.type)}</span>
+            ${statusBadge(material.type)}
             <h3>${escapeHtml(material.title)}</h3>
             <p>${escapeHtml(material.description)}</p>
             <p>Dodano: ${formatDate(material.addedAt)}</p>
@@ -2905,7 +3316,7 @@ function renderMarketingPublications() {
       <div class="marketing-card-grid">
         ${defaultMarketingPublications.map((publication) => `
           <article class="marketing-info-card">
-            <span class="status-pill">${escapeHtml(publication.status)}</span>
+            ${statusBadge(publication.status)}
             <h3>${escapeHtml(publication.title)}</h3>
             <p>${escapeHtml(publication.description)}</p>
             <dl class="marketing-dl">
@@ -3063,7 +3474,7 @@ function renderMarketingContests() {
           <article class="marketing-info-card">
             <div class="marketing-card-head">
               <div>
-                <span class="status-pill">${escapeHtml(contest.status)}</span>
+                ${statusBadge(contest.status)}
                 <h3>${escapeHtml(contest.name)}</h3>
               </div>
               <button class="button ghost" type="button" data-edit-marketing-contest="${escapeHtml(contest.id)}">Edytuj</button>
@@ -3168,14 +3579,136 @@ function formDataToObject(form) {
   return Object.fromEntries(new FormData(form).entries());
 }
 
-function filesToPayload(files) {
+function clearFieldError(field) {
+  const container = field?.closest(".field, .document-upload-box, .marketing-package-card, .check-row");
+  if (!container) return;
+  container.classList.remove("has-error");
+  container.querySelector(".field-error")?.remove();
+}
+
+function setFieldError(form, nameOrField, message) {
+  const field = typeof nameOrField === "string" ? form.querySelector(`[name="${nameOrField}"], #${nameOrField}`) : nameOrField;
+  if (!field) return;
+  const container = field.closest(".field, .document-upload-box, .marketing-package-card, .check-row") || field.parentElement;
+  if (!container) return;
+  container.classList.add("has-error");
+  container.querySelector(".field-error")?.remove();
+  const error = document.createElement("p");
+  error.className = "field-error";
+  error.textContent = message;
+  container.append(error);
+}
+
+function clearFormErrors(form) {
+  form.querySelectorAll(".has-error").forEach((item) => item.classList.remove("has-error"));
+  form.querySelectorAll(".field-error, .form-error").forEach((item) => item.remove());
+}
+
+function addFormError(form, message = "Nie mozna zapisac formularza. Popraw oznaczone pola.") {
+  form.querySelector(".form-error")?.remove();
+  const error = document.createElement("div");
+  error.className = "form-error";
+  error.textContent = message;
+  form.prepend(error);
+}
+
+function addValidationError(errors, field, message) {
+  errors.push({ field, message });
+}
+
+function showValidationErrors(form, errors) {
+  clearFormErrors(form);
+  if (!errors.length) return true;
+  addFormError(form);
+  errors.forEach((error) => setFieldError(form, error.field, error.message));
+  showToast("Nie mozna zapisac formularza. Popraw oznaczone pola.");
+  return false;
+}
+
+function digitsOnly(value = "") {
+  return String(value).replace(/\D/g, "");
+}
+
+function validateRequired(value) {
+  return String(value ?? "").trim().length > 0;
+}
+
+function validateNip(value) {
+  return digitsOnly(value).length === 10;
+}
+
+function validateRegon(value) {
+  return [9, 14].includes(digitsOnly(value).length);
+}
+
+function validateKrs(value) {
+  return digitsOnly(value).length === 10;
+}
+
+function validateEmail(value) {
+  if (!value) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+}
+
+function validatePhone(value) {
+  if (!value) return true;
+  return /^\+?[\d\s-]{7,18}$/.test(String(value).trim());
+}
+
+function validateUrl(value) {
+  if (!value) return true;
+  try {
+    const url = new URL(String(value).trim());
+    return ["http:", "https:"].includes(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
+function validateHoursValue(value) {
+  return /^\d+(\.\d{1,2})?$/.test(String(value)) && Number(value) > 0;
+}
+
+function validateDateRange(start, end) {
+  if (!start || !end) return true;
+  return new Date(end) >= new Date(start);
+}
+
+function parseDatePl(value = "") {
+  const [day, month, year] = String(value).split(".");
+  if (!day || !month || !year) return null;
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+function accelerationDateRange() {
+  const [start, end] = accelerationProject.period.split("-");
+  return { start: parseDatePl(start), end: parseDatePl(end) };
+}
+
+function validatePdfFile(file) {
+  if (!file) return "To pole jest wymagane.";
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+  if (!isPdf) return "Ten dokument musi byc dodany w formacie PDF.";
+  if (file.size > 10 * 1024 * 1024) return "Pojedynczy plik przekracza limit 10 MB.";
+  return "";
+}
+
+function validateFiles(files, { pdfOnly = false, required = false } = {}) {
+  const selected = Array.from(files || []);
+  if (required && !selected.length) return "To pole jest wymagane.";
+  for (const file of selected) {
+    if (file.size > 10 * 1024 * 1024) return "Pojedynczy plik przekracza limit 10 MB.";
+    if (pdfOnly && validatePdfFile(file)) return "Ten dokument musi byc dodany w formacie PDF.";
+  }
+  return "";
+}
+
+function filesToPayload(files, options = {}) {
+  const fileError = validateFiles(files, options);
+  if (fileError) return Promise.reject(new Error(fileError));
   return Promise.all(
     Array.from(files || []).map((file) => {
       return new Promise((resolve, reject) => {
-        if (file.size > 10 * 1024 * 1024) {
-          reject(new Error("Pojedynczy plik przekracza limit 10 MB."));
-          return;
-        }
         const reader = new FileReader();
         reader.onload = () => resolve({ name: file.name, content: reader.result });
         reader.onerror = () => reject(new Error("Nie udalo sie odczytac pliku."));
@@ -3187,6 +3720,14 @@ function filesToPayload(files) {
 
 async function saveContactFromForm(form) {
   const payload = formDataToObject(form);
+  const errors = [];
+  ["name", "position", "organization", "email"].forEach((field) => {
+    if (!validateRequired(payload[field])) addValidationError(errors, field, "To pole jest wymagane.");
+  });
+  if (!validateEmail(payload.email)) addValidationError(errors, "email", "Podaj poprawny adres e-mail.");
+  if (!validatePhone(payload.phone)) addValidationError(errors, "phone", "Podaj poprawny numer telefonu.");
+  if (!validateUrl(payload.photoUrl)) addValidationError(errors, "photoUrl", "Podaj poprawny link.");
+  if (!showValidationErrors(form, errors)) return;
   const uploadedPhoto = await filesToPayload(form.querySelector("#contact-photo-file")?.files);
   if (uploadedPhoto.length) payload.photoUrl = uploadedPhoto[0].content;
   const id = payload.id || `kontakt-${Date.now()}`;
@@ -3216,6 +3757,15 @@ async function saveContactFromForm(form) {
 
 function saveStartupProfileFromForm(form) {
   const payload = formDataToObject(form);
+  const errors = [];
+  if (state.startupProfileTab === "basics") {
+    if (!validateRequired(payload.companyName)) addValidationError(errors, "companyName", "To pole jest wymagane.");
+    if (!validateNip(payload.nip)) addValidationError(errors, "nip", "NIP powinien skladac sie z 10 cyfr.");
+    if (!validateKrs(payload.krs)) addValidationError(errors, "krs", "KRS powinien skladac sie z 10 cyfr.");
+    if (!validateRegon(payload.regon)) addValidationError(errors, "regon", "REGON powinien miec 9 albo 14 cyfr.");
+    if (!validateUrl(payload.website)) addValidationError(errors, "website", "Podaj poprawny link.");
+    if (!validateUrl(payload.social)) addValidationError(errors, "social", "Podaj poprawny link.");
+  }
   if (state.startupProfileTab === "people") {
     const people = Array.from(form.querySelectorAll("[data-profile-person]")).map((row) => ({
       name: row.querySelector('[name="name"]')?.value || "",
@@ -3226,8 +3776,25 @@ function saveStartupProfileFromForm(form) {
       type: row.querySelector('[name="type"]')?.value || "",
       representation: row.querySelector('[name="representation"]')?.value || ""
     }));
+    people.forEach((person, index) => {
+      const row = form.querySelectorAll("[data-profile-person]")[index];
+      if (!validateRequired(person.name)) {
+        const field = row?.querySelector('[name="name"]');
+        addValidationError(errors, field, "To pole jest wymagane.");
+      }
+      if (!validateEmail(person.email)) {
+        const field = row?.querySelector('[name="email"]');
+        addValidationError(errors, field, "Podaj poprawny adres e-mail.");
+      }
+      if (!validatePhone(person.phone)) {
+        const field = row?.querySelector('[name="phone"]');
+        addValidationError(errors, field, "Podaj poprawny numer telefonu.");
+      }
+    });
+    if (!showValidationErrors(form, errors)) return;
     updateStartupProfile({ people });
   } else {
+    if (!showValidationErrors(form, errors)) return;
     updateStartupProfile({ [state.startupProfileTab]: payload });
   }
   state.startupProfileEditing = false;
@@ -3253,6 +3820,10 @@ function validateMentoringPlannedHours(mentor, nextGoals) {
 function saveMentoringGoal(form) {
   const payload = formDataToObject(form);
   const mentor = mentoringMentor(payload.mentorId);
+  const errors = [];
+  if (!validateRequired(payload.name)) addValidationError(errors, "name", "To pole jest wymagane.");
+  if (!validateHoursValue(payload.plannedHours)) addValidationError(errors, "plannedHours", "Liczba godzin musi byc wieksza niz 0 i miec maksymalnie 2 miejsca po przecinku.");
+  if (!validateRequired(payload.dueDate)) addValidationError(errors, "dueDate", "To pole jest wymagane.");
   const goal = {
     id: payload.id || `goal-${Date.now()}`,
     name: payload.name,
@@ -3264,6 +3835,16 @@ function saveMentoringGoal(form) {
   };
   const existingIndex = mentor.goals.findIndex((item) => item.id === goal.id);
   const nextGoals = existingIndex >= 0 ? mentor.goals.map((item) => item.id === goal.id ? goal : item) : [...mentor.goals, goal];
+  const planned = nextGoals.reduce((sum, item) => sum + Number(item.plannedHours || 0), 0);
+  if (mentor.type === "lead" && planned > 65) addValidationError(errors, "plannedHours", "Mentor prowadzacy nie moze przekroczyc limitu 65 godzin.");
+  if (mentor.type === "subject" && planned > 10) addValidationError(errors, "plannedHours", "Jeden mentor merytoryczny nie moze przekroczyc limitu 10 godzin.");
+  if (mentor.type === "subject") {
+    const otherPlanned = mentoringMentors("subject")
+      .filter((item) => item.id !== mentor.id)
+      .reduce((sum, item) => sum + mentorPlannedHours(item), 0);
+    if (otherPlanned + planned > 60) addValidationError(errors, "plannedHours", "Laczny limit godzin mentorow merytorycznych wynosi 60 godzin.");
+  }
+  if (!showValidationErrors(form, errors)) return;
   validateMentoringPlannedHours(mentor, nextGoals);
   mentor.goals = nextGoals;
   state.mentoringGoalFormOpen = false;
@@ -3292,6 +3873,20 @@ function validateMentoringEntry(mentor, entry) {
 function saveMentoringEntry(form) {
   const payload = formDataToObject(form);
   const mentor = mentoringMentor(payload.mentorId);
+  const errors = [];
+  if (!mentor) addValidationError(errors, "mentorId", "Realizacja musi byc przypisana do konkretnego mentora.");
+  if (!validateRequired(payload.goalId)) addValidationError(errors, "goalId", "Realizacja musi byc przypisana do celu z Harmonogramu Mentoringu.");
+  if (!validateRequired(payload.date)) addValidationError(errors, "date", "To pole jest wymagane.");
+  if (!validateRequired(payload.startTime)) addValidationError(errors, "startTime", "To pole jest wymagane.");
+  if (!validateRequired(payload.endTime)) addValidationError(errors, "endTime", "To pole jest wymagane.");
+  if (!validateHoursValue(payload.hours)) addValidationError(errors, "hours", "Liczba godzin musi byc wieksza niz 0 i miec maksymalnie 2 miejsca po przecinku.");
+  if (payload.startTime && payload.endTime && payload.endTime < payload.startTime) {
+    addValidationError(errors, "endTime", "Data zakonczenia nie moze byc wczesniejsza niz data rozpoczecia.");
+  }
+  const range = accelerationDateRange();
+  if (payload.date && range.start && range.end && (payload.date < range.start || payload.date > range.end)) {
+    addValidationError(errors, "date", "Data realizacji musi miescic sie w okresie akceleracji.");
+  }
   const entry = {
     id: `entry-${Date.now()}`,
     date: payload.date,
@@ -3308,6 +3903,19 @@ function saveMentoringEntry(form) {
     includeInReport: payload.includeInReport === "true",
     notes: payload.notes
   };
+  const currentUsed = mentorUsedHours(mentor);
+  const nextUsed = currentUsed + Number(entry.hours || 0);
+  if (entry.status === "zrealizowane") {
+    if (mentor.type === "lead" && nextUsed > 65) addValidationError(errors, "hours", "Mentor prowadzacy nie moze przekroczyc limitu 65 godzin.");
+    if (mentor.type === "subject" && nextUsed > 10) addValidationError(errors, "hours", "Jeden mentor merytoryczny nie moze przekroczyc limitu 10 godzin.");
+    if (mentor.type === "subject") {
+      const otherUsed = mentoringMentors("subject")
+        .filter((item) => item.id !== mentor.id)
+        .reduce((sum, item) => sum + mentorUsedHours(item), 0);
+      if (otherUsed + nextUsed > 60) addValidationError(errors, "hours", "Laczny limit godzin mentorow merytorycznych wynosi 60 godzin.");
+    }
+  }
+  if (!showValidationErrors(form, errors)) return;
   validateMentoringEntry(mentor, entry);
   mentor.entries.push(entry);
   state.mentoringEntryFormOpen = false;
@@ -3403,6 +4011,15 @@ async function saveMarketingPackageItem(form) {
   const payload = formDataToObject(form);
   const item = state.marketingPackageItems.find((entry) => entry.id === payload.id);
   if (!item) return;
+  const fileInput = form.querySelector('input[name="file"]');
+  const errors = [];
+  if (payload.link && !validateUrl(payload.link)) addValidationError(errors, "link", "Podaj poprawny link.");
+  if (payload.status !== "brak" && !payload.link && !fileInput?.files?.length && !item.fileName && !payload.text) {
+    addValidationError(errors, fileInput, "Dodaj link, plik albo opis materialu.");
+  }
+  const fileError = validateFiles(fileInput?.files);
+  if (fileError) addValidationError(errors, fileInput, fileError);
+  if (!showValidationErrors(form, errors)) return;
   const uploaded = await filesToPayload(form.querySelector('input[name="file"]')?.files);
   item.status = payload.status;
   item.link = payload.link || "";
@@ -3428,6 +4045,17 @@ function saveMarketingProfile(form) {
 
 async function saveMarketingContest(form) {
   const payload = formDataToObject(form);
+  const errors = [];
+  if (!validateRequired(payload.name)) addValidationError(errors, "name", "To pole jest wymagane.");
+  if (!validateRequired(payload.deadline)) addValidationError(errors, "deadline", "To pole jest wymagane.");
+  if (payload.deadline && payload.status !== "archiwalny" && payload.deadline < dateKey(new Date())) {
+    addValidationError(errors, "deadline", "Termin zgloszenia nie powinien byc wczesniejszy niz data dzisiejsza.");
+  }
+  if (payload.url && !validateUrl(payload.url)) addValidationError(errors, "url", "Podaj poprawny link.");
+  const fileInput = form.querySelector('input[name="file"]');
+  const fileError = validateFiles(fileInput?.files);
+  if (fileError) addValidationError(errors, fileInput, fileError);
+  if (!showValidationErrors(form, errors)) return;
   const uploaded = await filesToPayload(form.querySelector('input[name="file"]')?.files);
   const existing = state.marketingContests.find((contest) => contest.id === payload.id);
   const nextContest = {
@@ -3451,6 +4079,15 @@ async function saveMarketingContest(form) {
     showToast("Zapisano konkurs.");
   } else {
     state.marketingContests.push(nextContest);
+    addNotification({
+      title: "Dodano nowy konkurs w module Marketing",
+      description: nextContest.description || `Termin zgloszen: ${nextContest.deadline || "-"}.`,
+      type: "marketing_contest",
+      module: "marketing",
+      relatedObjectId: nextContest.id,
+      relatedObjectName: nextContest.name,
+      actionLabel: "Przejdz do konkursu"
+    });
     showToast("Dodano konkurs.");
   }
   state.marketingContestFormOpen = false;
@@ -3526,13 +4163,10 @@ async function saveDocumentPdf(form) {
   const document = workflowDocument(payload.documentId);
   const input = form.querySelector('input[name="pdfFile"]');
   const file = input?.files?.[0];
-  if (!document || !file) return;
-  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-  if (!isPdf) {
-    showToast("Dodaj plik w formacie PDF. Inne formaty nie zostaly zapisane.");
-    return;
-  }
-  const [uploaded] = await filesToPayload([file]);
+  if (!document) return;
+  const fileError = validatePdfFile(file);
+  if (fileError && !showValidationErrors(form, [{ field: input, message: fileError }])) return;
+  const [uploaded] = await filesToPayload([file], { pdfOnly: true, required: true });
   const actor = documentActor();
   const previousStatus = document.status;
   const previousFileName = document.currentFile?.name || "";
@@ -3563,6 +4197,15 @@ async function saveDocumentPdf(form) {
     previousFileName,
     file.name
   );
+  addNotification({
+    title: previousFileName ? "Podmieniono plik dokumentu" : "Dodano plik dokumentu",
+    description: `Nowy status: ${document.status}.`,
+    type: document.status === "Do poprawy" ? "document_correction" : "document_status",
+    module: "documents",
+    relatedObjectId: document.id,
+    relatedObjectName: document.title,
+    actionLabel: "Przejdz do dokumentu"
+  });
   renderDocuments();
   showToast(previousFileName ? "Podmieniono plik PDF i zapisano historie." : "Dodano plik PDF i zmieniono status dokumentu.");
 }
@@ -3614,6 +4257,15 @@ function applyDocumentAction(documentId, action) {
   if (action === "project-sign") updateSignaturePath(document, "Opiekun", "podpisano");
   if (action === "authorized-sign" || action === "complete") updateSignaturePath(document, "upowazniona", "podpisano");
   addDocumentHistory(document, actionType, actor, previousStatus, document.status, comment, document.currentFile?.name || "");
+  addNotification({
+    title: actionType,
+    description: comment,
+    type: action === "return" ? "document_correction" : "document_status",
+    module: "documents",
+    relatedObjectId: document.id,
+    relatedObjectName: document.title,
+    actionLabel: "Przejdz do dokumentu"
+  });
   renderDocuments();
   showToast("Wykonano akcje i zaktualizowano historie dokumentu.");
 }
@@ -3622,6 +4274,9 @@ function saveDocumentComment(form) {
   const payload = formDataToObject(form);
   const document = workflowDocument(payload.documentId);
   if (!document) return;
+  const errors = [];
+  if (!validateRequired(payload.comment)) addValidationError(errors, "comment", "To pole jest wymagane.");
+  if (!showValidationErrors(form, errors)) return;
   const actor = documentActor();
   const timestamp = new Date().toISOString();
   document.comments.push({
@@ -3632,6 +4287,15 @@ function saveDocumentComment(form) {
     text: payload.comment
   });
   addDocumentHistory(document, "Dodano komentarz", actor, document.status, document.status, payload.comment, document.currentFile?.name || "");
+  addNotification({
+    title: "Dodano komentarz do dokumentu",
+    description: payload.comment,
+    type: "project_comment",
+    module: "documents",
+    relatedObjectId: document.id,
+    relatedObjectName: document.title,
+    actionLabel: "Przejdz do komentarzy"
+  });
   renderDocuments();
   showToast("Dodano komentarz i wpis w historii dokumentu.");
 }
@@ -3720,15 +4384,63 @@ scopeSelect.addEventListener("change", async () => {
 });
 
 document.addEventListener("click", async (event) => {
+  const notificationOpen = event.target.closest("[data-notification-open]");
+  if (notificationOpen) {
+    openNotification(notificationOpen.dataset.notificationOpen);
+    return;
+  }
+
+  const notificationItem = event.target.closest("[data-notification-id]");
+  if (notificationItem && !event.target.closest("button")) {
+    openNotification(notificationItem.dataset.notificationId);
+    return;
+  }
+
+  if (event.target.closest("[data-notifications-mark-all]")) {
+    state.notifications = state.notifications.map((item) => ({ ...item, read: true }));
+    renderNotificationMenu();
+    return;
+  }
+
+  if (event.target.closest("[data-notifications-clear-read]")) {
+    state.notifications = state.notifications.filter((item) => !item.read);
+    renderNotificationMenu();
+    return;
+  }
+
+  if (event.target.closest("[data-notifications-history]")) {
+    state.notificationsOpen = true;
+    renderNotificationMenu();
+    return;
+  }
+
+  const searchOpen = event.target.closest("[data-search-open]");
+  if (searchOpen) {
+    openSearchResult(searchOpen.dataset.searchOpen);
+    return;
+  }
+
+  const searchItem = event.target.closest("[data-search-result]");
+  if (searchItem && !event.target.closest("button")) {
+    openSearchResult(searchItem.dataset.searchResult);
+    return;
+  }
+
   const notificationTrigger = event.target.closest("[data-notifications-toggle]");
   if (notificationTrigger) {
     state.notificationsOpen = !state.notificationsOpen;
-    renderStart();
+    renderNotificationMenu();
     return;
   }
 
   if (state.notificationsOpen && !event.target.closest(".notification-menu")) {
     state.notificationsOpen = false;
+    renderNotificationMenu();
+  }
+
+  if (state.searchOpen && !event.target.closest(".global-search")) {
+    state.searchOpen = false;
+    renderGlobalSearch();
   }
 
   const contextTrigger = event.target.closest("[data-context-toggle]");
@@ -4035,7 +4747,6 @@ document.addEventListener("click", async (event) => {
     event.preventDefault();
     const form = submitContact.closest("#contact-form");
     if (!form) return;
-    if (form?.reportValidity && !form.reportValidity()) return;
     await saveContactFromForm(form);
     return;
   }
@@ -4102,6 +4813,16 @@ document.addEventListener("click", async (event) => {
 });
 
 document.addEventListener("input", (event) => {
+  if (event.target.id === "global-search-input") {
+    state.searchQuery = event.target.value;
+    state.searchOpen = true;
+    renderGlobalSearch();
+    const input = document.querySelector("#global-search-input");
+    input?.focus();
+    input?.setSelectionRange(state.searchQuery.length, state.searchQuery.length);
+    return;
+  }
+
   if (event.target.id === "contact-search") {
     const position = event.target.selectionStart || event.target.value.length;
     state.contactSearch = event.target.value;
@@ -4117,6 +4838,13 @@ document.addEventListener("input", (event) => {
   }
   if (["netAmount", "vatRate"].includes(event.target.id)) {
     calculateExpenseTotals();
+  }
+
+  const validationForm = event.target.closest("form");
+  if (validationForm && event.target.matches("input, select, textarea")) {
+    clearFieldError(event.target);
+    const formError = validationForm.querySelector(".form-error");
+    formError?.remove();
   }
 });
 
@@ -4140,12 +4868,30 @@ document.addEventListener("drop", (event) => {
   uploadBox.classList.remove("is-dragging");
   const input = uploadBox.querySelector('input[name="pdfFile"]');
   if (input && event.dataTransfer?.files?.length) {
+    const error = validatePdfFile(event.dataTransfer.files[0]);
+    if (error) {
+      setFieldError(uploadBox, input, error);
+      showToast(error);
+      return;
+    }
+    clearFieldError(input);
     input.files = event.dataTransfer.files;
     showToast(`Wybrano plik: ${event.dataTransfer.files[0].name}`);
   }
 });
 
 document.addEventListener("change", async (event) => {
+  if (event.target.matches('input[type="file"]')) {
+    const requiresPdf = event.target.accept?.includes("pdf") || event.target.name === "pdfFile";
+    const error = validateFiles(event.target.files, { pdfOnly: requiresPdf });
+    if (error) {
+      setFieldError(event.target.closest("form") || document, event.target, error);
+      showToast(error);
+    } else {
+      clearFieldError(event.target);
+    }
+  }
+
   if (event.target.closest("[data-mentoring-export-month]")) {
     state.mentoringExportMonth = event.target.value;
     return;
@@ -4255,12 +5001,22 @@ document.addEventListener("submit", async (event) => {
 
     if (form.id === "expense-form") {
       const payload = formDataToObject(form);
+      const errors = [];
+      ["beneficiaryId", "invoiceNumber", "contractor", "invoiceDate", "netAmount", "priorityGoal", "detailedGoal", "description"].forEach((field) => {
+        if (!validateRequired(payload[field])) addValidationError(errors, field, "To pole jest wymagane.");
+      });
+      if (Number(payload.netAmount || 0) <= 0) addValidationError(errors, "netAmount", "Kwota netto musi byc wieksza niz 0.");
+      const invoiceFiles = form.querySelector("#invoice-files")?.files;
+      const otherFiles = form.querySelector("#other-files")?.files;
+      if (!invoiceFiles?.length && !otherFiles?.length) addValidationError(errors, "invoice-files", "Dodaj przynajmniej jeden zalacznik.");
+      const invoiceError = validateFiles(invoiceFiles);
+      const otherError = validateFiles(otherFiles);
+      if (invoiceError) addValidationError(errors, "invoice-files", invoiceError);
+      if (otherError) addValidationError(errors, "other-files", otherError);
+      if (!showValidationErrors(form, errors)) return;
       payload.actorId = state.actorId;
       payload.invoiceFiles = await filesToPayload(form.querySelector("#invoice-files")?.files);
       payload.otherFiles = await filesToPayload(form.querySelector("#other-files")?.files);
-      if (!payload.invoiceFiles.length && !payload.otherFiles.length) {
-        throw new Error("Dodaj przynajmniej jeden zalacznik: fakture/rachunek albo pozostaly dokument.");
-      }
       await api("/api/expenses", {
         method: "POST",
         body: JSON.stringify(payload)
@@ -4272,6 +5028,14 @@ document.addEventListener("submit", async (event) => {
 
     if (form.id === "calendar-form") {
       const payload = formDataToObject(form);
+      const errors = [];
+      ["title", "startAt", "endAt"].forEach((field) => {
+        if (!validateRequired(payload[field])) addValidationError(errors, field, "To pole jest wymagane.");
+      });
+      if (!validateDateRange(payload.startAt, payload.endAt)) addValidationError(errors, "endAt", "Data zakonczenia nie moze byc wczesniejsza niz data rozpoczecia.");
+      const calendarFileError = validateFiles(form.querySelector("#calendar-files")?.files);
+      if (calendarFileError) addValidationError(errors, "calendar-files", calendarFileError);
+      if (!showValidationErrors(form, errors)) return;
       payload.actorId = state.actorId;
       payload.participantIds = formCheckboxValues(form, "participantIds");
       payload.files = await filesToPayload(form.querySelector("#calendar-files")?.files);
@@ -4295,9 +5059,13 @@ document.addEventListener("submit", async (event) => {
     }
 
     if (form.id === "beneficiary-form") {
+      const errors = [];
+      const payload = formDataToObject(form);
+      if (!validateRequired(payload.name)) addValidationError(errors, "name", "To pole jest wymagane.");
+      if (!showValidationErrors(form, errors)) return;
       const beneficiary = await api("/api/beneficiaries", {
         method: "POST",
-        body: JSON.stringify(formDataToObject(form))
+        body: JSON.stringify(payload)
       });
       state.actorId = "admin";
       state.scopeBeneficiaryId = beneficiary.id;
@@ -4312,5 +5080,5 @@ document.addEventListener("submit", async (event) => {
 });
 
 loadState().catch((error) => {
-  app.innerHTML = `<div class="empty-state card">${escapeHtml(error.message)}</div>`;
+    app.innerHTML = emptyState("Nie udalo sie zaladowac widoku", error.message);
 });
