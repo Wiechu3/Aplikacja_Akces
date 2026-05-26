@@ -9,6 +9,12 @@ npm install
 npm start
 ```
 
+Aby serwer automatycznie restartował się po zmianach plików:
+
+```bash
+npm run dev
+```
+
 Aplikacja startuje domyslnie pod adresem:
 
 ```text

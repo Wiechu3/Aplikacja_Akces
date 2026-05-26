@@ -2,6 +2,38 @@ const state = {
   activeView: "start",
   actorId: "admin",
   scopeBeneficiaryId: "all",
+  sidebarCollapsed: window.localStorage.getItem("akces-sidebar-collapsed") === "true",
+  mobileSidebarOpen: false,
+  notificationsOpen: false,
+  addressBookOpen: false,
+  addressBookFormOpen: false,
+  editingContactId: "",
+  contactSearch: "",
+  contactCategory: "all",
+  addressBookContacts: [],
+  startupProfileTab: "basics",
+  startupProfileEditing: false,
+  startupProfileOverrides: {},
+  mentoringMainTab: "lead",
+  mentoringActiveMentorId: "lead-mentor",
+  mentoringSection: "info",
+  mentoringGoalFormOpen: false,
+  mentoringEditingGoalId: "",
+  mentoringEntryFormOpen: false,
+  mentoringExportMonth: "all",
+  mentoringMentors: [],
+  marketingTab: "package",
+  marketingPackageItems: [],
+  marketingProfile: {},
+  marketingProfileEditing: false,
+  marketingMaterialFilter: "all",
+  marketingContestStatusFilter: "all",
+  marketingContestTypeFilter: "all",
+  marketingContestFormOpen: false,
+  marketingEditingContestId: "",
+  marketingContests: [],
+  documentsTab: "contract",
+  documentWorkflowDocs: [],
   showDocumentForm: false,
   startupCardBeneficiaryId: "",
   calendarDate: new Date(),
@@ -54,33 +86,716 @@ const calendarColors = [
 ];
 
 const reportLabels = {
-  expenses: "Wydatki",
+  expenses: "Grant i wydatki",
   documents: "Dokumenty",
   calendar: "Kalendarz"
 };
 
-const startupFields = [
-  ["companyName", "Nazwa spolki"],
-  ["acronym", "Akronim"],
-  ["nip", "NIP"],
-  ["krs", "KRS"],
-  ["regon", "REGON"],
-  ["contactPeople", "Osoby kontaktowe"],
-  ["mailingAddress", "Dane do korespondencji"],
-  ["projectSupervisor", "Opiekun projektu"],
-  ["mentors", "Mentorzy"],
-  ["experts", "Eksperci"],
-  ["projectSchedule", "Harmonogram projektu"],
-  ["projectScope", "Zakres projektu"],
-  ["contractAttachments", "Umowa i zalaczniki"],
-  ["documentStatus", "Status dokumentow"]
+const moduleLabels = {
+  start: "Start",
+  "startup-card": "Karta startupu",
+  documents: "Dokumenty",
+  calendar: "Kalendarz",
+  mentoring: "Mentoring",
+  expenses: "Grant i wydatki",
+  "add-expense": "Grant i wydatki",
+  marketing: "Marketing",
+  reports: "Raporty",
+  tutorial: "Samouczek",
+  settings: "Ustawienia"
+};
+
+const startupProfileTabs = [
+  { id: "basics", label: "Dane podstawowe" },
+  { id: "project", label: "Projekt w programie" },
+  { id: "description", label: "Opis startupu" },
+  { id: "people", label: "Osoby kontaktowe" },
+  { id: "correspondence", label: "Korespondencja" }
 ];
+
+const mentorSections = [
+  { id: "info", label: "Informacje o mentorze" },
+  { id: "schedule", label: "Harmonogram Mentoringu" },
+  { id: "hours", label: "Realizacja godzin" },
+  { id: "documents", label: "Dokumenty" }
+];
+
+const mentoringMonths = ["Maj 2026", "Czerwiec 2026", "Lipiec 2026", "Sierpien 2026", "Wrzesien 2026", "Pazdziernik 2026"];
+const mentoringGoalStatuses = ["planowany", "w trakcie", "zakonczony"];
+const mentoringEntryStatuses = ["zaplanowane", "zrealizowane", "odwolane"];
+const mentoringForms = ["spotkanie online", "spotkanie stacjonarne", "praca wlasna mentora"];
+const reportStatuses = ["do uzupelnienia", "robocze", "wyslane", "do poprawy", "zaakceptowane"];
+const marketingTabs = [
+  { id: "package", label: "Paczka marketingowa" },
+  { id: "profile", label: "Profil promocyjny" },
+  { id: "materials", label: "Materialy od Akces" },
+  { id: "publications", label: "Publikacje" },
+  { id: "contests", label: "Konkursy" }
+];
+const marketingPackageStatuses = ["brak", "dodano", "do poprawy", "zaakceptowano"];
+const marketingMaterialTypes = ["Webinary", "Prezentacje", "Instrukcje", "Grafiki", "Wzory postow", "Inne"];
+const marketingPublicationStatuses = ["planowana", "w przygotowaniu", "wyslana do akceptacji", "zaakceptowana", "opublikowana", "archiwalna"];
+const marketingContestTypes = ["konkurs", "nabor", "wydarzenie", "pitch contest", "nagroda", "program promocyjny"];
+const marketingContestStatuses = ["nowy", "do rozwazenia", "w trakcie przygotowania", "zgloszony", "odrzucony", "zakwalifikowany", "wygrany", "archiwalny"];
+const documentWorkflowTabs = [
+  { id: "contract", label: "Umowa akceleracyjna" },
+  { id: "wst", label: "WST miesieczne" },
+  { id: "formal", label: "Dokumenty formalne" },
+  { id: "other", label: "Inne dokumenty" },
+  { id: "archive", label: "Archiwum" }
+];
+const documentWorkflowStatuses = [
+  "Oczekuje na dodanie pliku",
+  "Oczekuje na dodanie umowy przez Beneficjenta",
+  "Oczekuje na dodanie podpisanego WST przez Beneficjenta",
+  "Oczekuje na dodanie poprawnego pliku",
+  "Oczekuje na podpis Beneficjenta",
+  "Oczekuje na weryfikacje Akces",
+  "Do poprawy",
+  "Oczekuje na podpis Opiekuna Projektu",
+  "Oczekuje na podpis osoby upowaznionej",
+  "Podpisany przez wszystkie wymagane osoby",
+  "Zaakceptowany",
+  "Archiwalny"
+];
+
+const accelerationProject = {
+  program: "HPN IMPAKT / Akces NCBR",
+  stage: "Realizacja akceleracji",
+  period: "28.04.2026-27.10.2026",
+  progress: 38,
+  status: "Aktywny",
+  projectName: "Platforma rozwoju technologii w programie Akces NCBR",
+  acronym: "AKCES-IMPAKT"
+};
+
+const attentionTasks = [
+  {
+    title: "Harmonogram Mentoringu wymaga poprawy",
+    description: "Wprowadz korekte zgodnie z uwagami opiekuna przed kolejnym spotkaniem.",
+    status: "Wymaga reakcji",
+    due: "do 31.05.2026",
+    action: "Przejdz do dokumentu",
+    view: "documents"
+  },
+  {
+    title: "Deklaracja wekslowa nie zostala dostarczona",
+    description: "Uzupelnij brakujacy dokument i zalacz skan w module Dokumenty.",
+    status: "Brak dokumentu",
+    due: "do 03.06.2026",
+    action: "Zobacz instrukcje",
+    view: "tutorial"
+  },
+  {
+    title: "Harmonogram Grantu bedzie dostepny po akceptacji HM",
+    description: "Po akceptacji harmonogramu mentoringu zobaczysz kolejne kroki rozliczen.",
+    status: "Oczekuje",
+    due: "",
+    action: "Zobacz szczegoly",
+    view: "expenses"
+  },
+  {
+    title: "Opiekun projektu dodal komentarze",
+    description: "Sprawdz ostatnie uwagi i potwierdz, ktore elementy zostaly poprawione.",
+    status: "Nowe komentarze",
+    due: "dzisiaj",
+    action: "Przejdz do dokumentu",
+    view: "documents"
+  },
+  {
+    title: "Umow spotkanie mentoringowe",
+    description: "Wybierz termin spotkania i dodaj go do kalendarza projektu.",
+    status: "Do zaplanowania",
+    due: "w tym tygodniu",
+    action: "Przejdz do kalendarza",
+    view: "calendar"
+  }
+];
+
+const akcesNotifications = [
+  {
+    title: "Nowe uwagi do Harmonogramu Mentoringu",
+    body: "Opiekun projektu oznaczyl punkty wymagajace poprawy.",
+    time: "10 min temu"
+  },
+  {
+    title: "Opiekun projektu dodal komentarze",
+    body: "Komentarze zostaly dodane 2 godziny temu.",
+    time: "2 godz. temu"
+  },
+  {
+    title: "Przypomnienie o terminie",
+    body: "Deklaracja wekslowa powinna zostac dostarczona w najblizszych dniach.",
+    time: "dzisiaj"
+  },
+  {
+    title: "Zmieniono status dokumentu",
+    body: "Jeden z dokumentow zmienil status na do weryfikacji.",
+    time: "wczoraj"
+  }
+];
+
+const contactCategories = ["Program", "Dokumenty", "Grant", "Mentoring", "Techniczne", "Marketing"];
+
+const defaultAddressBookContacts = [
+  {
+    id: "opiekun-projektu",
+    name: "Anna Kowalska",
+    position: "Opiekun Projektu Akces NCBR",
+    organization: "Akces NCBR / Program",
+    email: "anna.kowalska@akces-ncbr.pl",
+    phone: "+48 500 100 200",
+    description: "kontakt w sprawach projektu, terminow i komentarzy do zadan",
+    category: "Program",
+    photoUrl: ""
+  },
+  {
+    id: "koordynator-programu",
+    name: "Marek Zielinski",
+    position: "Koordynator programu",
+    organization: "Akces NCBR / Program",
+    email: "marek.zielinski@akces-ncbr.pl",
+    phone: "+48 500 200 300",
+    description: "kontakt w sprawach formalnych programu i harmonogramu akceleracji",
+    category: "Program",
+    photoUrl: ""
+  },
+  {
+    id: "dokumenty",
+    name: "Ewa Nowak",
+    position: "Specjalistka ds. dokumentow",
+    organization: "Akces NCBR / Dokumenty",
+    email: "ewa.nowak@akces-ncbr.pl",
+    phone: "+48 500 300 400",
+    description: "kontakt w sprawach dokumentow, zalacznikow i terminow dostarczenia",
+    category: "Dokumenty",
+    photoUrl: ""
+  },
+  {
+    id: "grant",
+    name: "Piotr Wozniak",
+    position: "Specjalista ds. rozliczenia grantu",
+    organization: "Akces NCBR / Grant",
+    email: "piotr.wozniak@akces-ncbr.pl",
+    phone: "+48 500 400 500",
+    description: "kontakt w sprawach wydatkow, rozliczen i Harmonogramu Grantu",
+    category: "Grant",
+    photoUrl: ""
+  },
+  {
+    id: "mentoring",
+    name: "Karolina Wisniewska",
+    position: "Koordynatorka mentoringu",
+    organization: "Akces NCBR / Mentoring",
+    email: "karolina.wisniewska@akces-ncbr.pl",
+    phone: "+48 500 500 600",
+    description: "kontakt w sprawach spotkan, mentorow i harmonogramu mentoringu",
+    category: "Mentoring",
+    photoUrl: ""
+  },
+  {
+    id: "techniczne",
+    name: "Tomasz Kaminski",
+    position: "Pomoc techniczna",
+    organization: "Akces NCBR / IT",
+    email: "support@akces-ncbr.pl",
+    phone: "+48 500 600 700",
+    description: "kontakt w sprawach dostepu, plikow i problemow technicznych",
+    category: "Techniczne",
+    photoUrl: ""
+  },
+  {
+    id: "marketing",
+    name: "Julia Lewandowska",
+    position: "Kontakt marketingowy",
+    organization: "Akces NCBR / Marketing",
+    email: "marketing@akces-ncbr.pl",
+    phone: "+48 500 700 800",
+    description: "kontakt w sprawach komunikacji, materialow i promocji projektu",
+    category: "Marketing",
+    photoUrl: ""
+  }
+];
+
+state.addressBookContacts = defaultAddressBookContacts.map((contact) => ({ ...contact }));
+
+function monthlyReports(seed = {}) {
+  return mentoringMonths.map((month, index) => ({
+    month,
+    status: seed[month]?.status || (index === 0 ? "do uzupelnienia" : "robocze"),
+    signedFile: ""
+  }));
+}
+
+const defaultMentoringMentors = [
+  {
+    id: "lead-mentor",
+    type: "lead",
+    role: "Mentor prowadzacy",
+    name: "Jan Kowalski",
+    specialization: "strategia produktu i rozwoj biznesu",
+    email: "jan.kowalski@akces-ncbr.pl",
+    phone: "+48 510 100 200",
+    limit: 65,
+    documents: {
+      schedule: { status: "roboczy", version: "v1", addedAt: "2026-05-10", fileName: "" },
+      reports: monthlyReports({ "Maj 2026": { status: "do uzupelnienia" } })
+    },
+    goals: [
+      {
+        id: "lead-goal-1",
+        name: "Opracowanie wstepnej specyfikacji produktu",
+        description: "Doprecyzowanie zakresu MVP, funkcji i zalozen walidacji.",
+        plannedHours: 12,
+        result: "dokument specyfikacji produktu",
+        dueDate: "2026-06-20",
+        status: "w trakcie"
+      },
+      {
+        id: "lead-goal-2",
+        name: "Plan akceleracji i kamienie milowe",
+        description: "Ustalenie priorytetow mentoringu oraz oczekiwanych rezultatow miesiecznych.",
+        plannedHours: 18,
+        result: "plan prac i lista kamieni milowych",
+        dueDate: "2026-07-15",
+        status: "planowany"
+      }
+    ],
+    entries: [
+      {
+        id: "lead-entry-1",
+        date: "2026-06-12",
+        startTime: "10:00",
+        endTime: "12:00",
+        goalId: "lead-goal-1",
+        hours: 2,
+        form: "spotkanie online",
+        meetingLink: "https://meet.example.com/akces-mentor",
+        supervisorLink: "https://akces.example.com/opiekun/spotkanie-1",
+        place: "",
+        description: "Omowienie struktury specyfikacji produktu i podzialu prac.",
+        status: "zrealizowane",
+        includeInReport: true,
+        notes: "Do sprawozdania za czerwiec."
+      },
+      {
+        id: "lead-entry-2",
+        date: "2026-06-18",
+        startTime: "09:00",
+        endTime: "12:00",
+        goalId: "lead-goal-1",
+        hours: 3,
+        form: "praca wlasna mentora",
+        meetingLink: "",
+        supervisorLink: "https://akces.example.com/opiekun/notatka-2",
+        place: "",
+        description: "Przeglad zalozen produktu i komentarze do dokumentu.",
+        status: "zrealizowane",
+        includeInReport: true,
+        notes: ""
+      }
+    ]
+  },
+  {
+    id: "subject-1",
+    type: "subject",
+    role: "Mentor merytoryczny",
+    name: "Anna Zielinska",
+    specialization: "sprzedaz B2B i walidacja rynku",
+    email: "anna.zielinska@akces-ncbr.pl",
+    phone: "+48 510 300 400",
+    limit: 10,
+    documents: {
+      schedule: { status: "wyslany do Akces", version: "v1", addedAt: "2026-05-20", fileName: "" },
+      reports: monthlyReports()
+    },
+    goals: [
+      {
+        id: "subject-1-goal-1",
+        name: "Walidacja grupy docelowej",
+        description: "Przygotowanie scenariusza rozmow z pierwszymi odbiorcami.",
+        plannedHours: 6,
+        result: "scenariusz wywiadow i lista hipotez",
+        dueDate: "2026-06-25",
+        status: "w trakcie"
+      }
+    ],
+    entries: [
+      {
+        id: "subject-1-entry-1",
+        date: "2026-06-10",
+        startTime: "13:00",
+        endTime: "15:00",
+        goalId: "subject-1-goal-1",
+        hours: 2,
+        form: "spotkanie online",
+        meetingLink: "https://meet.example.com/walidacja",
+        supervisorLink: "",
+        place: "",
+        description: "Praca nad pytaniami do rozmow z klientami.",
+        status: "zrealizowane",
+        includeInReport: true,
+        notes: ""
+      }
+    ]
+  },
+  {
+    id: "subject-2",
+    type: "subject",
+    role: "Mentor merytoryczny",
+    name: "Pawel Lewandowski",
+    specialization: "finanse projektu i model przychodowy",
+    email: "pawel.lewandowski@akces-ncbr.pl",
+    phone: "+48 510 500 600",
+    limit: 10,
+    documents: {
+      schedule: { status: "roboczy", version: "v1", addedAt: "2026-05-22", fileName: "" },
+      reports: monthlyReports()
+    },
+    goals: [
+      {
+        id: "subject-2-goal-1",
+        name: "Model finansowy MVP",
+        description: "Przygotowanie zalozen kosztowych i pierwszych scenariuszy sprzedazy.",
+        plannedHours: 5,
+        result: "arkusz modelu finansowego",
+        dueDate: "2026-07-05",
+        status: "planowany"
+      }
+    ],
+    entries: []
+  },
+  {
+    id: "subject-3",
+    type: "subject",
+    role: "Mentor merytoryczny",
+    name: "Katarzyna Wrobel",
+    specialization: "marketing i komunikacja",
+    email: "katarzyna.wrobel@akces-ncbr.pl",
+    phone: "+48 510 700 800",
+    limit: 10,
+    documents: {
+      schedule: { status: "zaakceptowany", version: "v2", addedAt: "2026-05-28", fileName: "" },
+      reports: monthlyReports()
+    },
+    goals: [
+      {
+        id: "subject-3-goal-1",
+        name: "Komunikacja wartosci produktu",
+        description: "Ulozenie komunikatow dla pierwszych materialow promocyjnych.",
+        plannedHours: 7,
+        result: "zestaw komunikatow marketingowych",
+        dueDate: "2026-07-10",
+        status: "planowany"
+      }
+    ],
+    entries: []
+  }
+];
+
+state.mentoringMentors = defaultMentoringMentors.map((mentor) => ({
+  ...mentor,
+  goals: mentor.goals.map((goal) => ({ ...goal })),
+  entries: mentor.entries.map((entry) => ({ ...entry })),
+  documents: {
+    schedule: { ...mentor.documents.schedule },
+    reports: mentor.documents.reports.map((report) => ({ ...report }))
+  }
+}));
+
+const defaultMarketingPackageItems = [
+  { id: "logo", title: "Logo startupu", status: "zaakceptowano", kind: "file", link: "", text: "Podstawowy logotyp SeaMesh.", fileName: "seamesh-logo.png", fileData: "" },
+  { id: "logo-light", title: "Logo w wersji jasnej", status: "dodano", kind: "file", link: "", text: "Wersja do ciemnego tla.", fileName: "seamesh-logo-light.svg", fileData: "" },
+  { id: "logo-dark", title: "Logo w wersji ciemnej", status: "brak", kind: "file", link: "", text: "", fileName: "", fileData: "" },
+  { id: "short-description", title: "Krotki opis startupu", status: "zaakceptowano", kind: "text", link: "", text: "SeaMesh pomaga planowac uprawe warzyw zgodnie z kalendarzem biodynamicznym.", fileName: "", fileData: "" },
+  { id: "long-description", title: "Dluzszy opis startupu", status: "do poprawy", kind: "text", link: "", text: "Opis wymaga doprecyzowania zastosowan dla gospodarstw i ogrodow spolecznych.", fileName: "", fileData: "" },
+  { id: "project-description", title: "Opis projektu realizowanego w programie", status: "dodano", kind: "text", link: "", text: "Projekt rozwija cyfrowy planer prac ogrodniczych oparty o fazy ksiezyca i dni korzenia, liscia, kwiatu oraz owocu.", fileName: "", fileData: "" },
+  { id: "team-photos", title: "Zdjecia zespolu", status: "dodano", kind: "file", link: "", text: "Zdjecia robocze do selekcji.", fileName: "zespol-seamesh.zip", fileData: "" },
+  { id: "founders-photo", title: "Zdjecie founderow / reprezentantow", status: "brak", kind: "file", link: "", text: "", fileName: "", fileData: "" },
+  { id: "product-graphics", title: "Grafiki lub zdjecia produktu", status: "dodano", kind: "file", link: "", text: "Zrzuty ekranu planera upraw.", fileName: "product-screens.zip", fileData: "" },
+  { id: "website", title: "Link do strony www", status: "dodano", kind: "link", link: "https://seamesh.example.com", text: "", fileName: "", fileData: "" },
+  { id: "linkedin", title: "Link do LinkedIna", status: "brak", kind: "link", link: "", text: "", fileName: "", fileData: "" },
+  { id: "demo", title: "Link do demo / filmu / prezentacji", status: "dodano", kind: "link", link: "https://demo.example.com/seamesh", text: "Wersja demo do pokazywania partnerom programu.", fileName: "", fileData: "" },
+  { id: "pitch", title: "Krotki pitch, 2-3 zdania", status: "zaakceptowano", kind: "text", link: "", text: "Tworzymy planer upraw, ktory laczy praktyke ogrodnicza z kalendarzem biodynamicznym. Pomaga dobrac prace do dni korzenia, liscia, kwiatu i owocu.", fileName: "", fileData: "" },
+  { id: "consent", title: "Zgoda na wykorzystanie materialow marketingowych", status: "brak", kind: "file", link: "", text: "", fileName: "", fileData: "" }
+];
+
+const defaultMarketingProfile = {
+  activity: "Startup rozwija narzedzie pomagajace planowac uprawe warzyw zgodnie z kalendarzem biodynamicznym.",
+  problem: "Male gospodarstwa i ogrody edukacyjne maja rozproszone informacje o terminach siewu, przesadzania, pielegnacji i zbiorow.",
+  solution: "Aplikacja porzadkuje prace wedlug dni korzenia, liscia, kwiatu i owocu oraz podpowiada, kiedy siac, sadzic, nawozic i zbierac.",
+  audience: "Gospodarstwa ekologiczne, ogrody spoleczne, szkoly ogrodnicze, edukatorzy i pasjonaci upraw warzywnych.",
+  distinction: "Laczy praktyczne checklisty, sezonowosc i prosty jezyk z biodynamicznym podejsciem do rytmu prac w ogrodzie.",
+  achievements: "Pierwszy prototyp planera, testy z ogrodami spolecznymi i baza ponad 40 popularnych warzyw.",
+  tags: "agritech, ogrodnictwo, edukacja ekologiczna, warzywa, kalendarz biodynamiczny",
+  impact: "Wsparcie lokalnej produkcji zywnosci, ograniczanie strat w uprawach i edukacja klimatyczna.",
+  shortPublication: "SeaMesh tworzy planer upraw warzyw zgodny z kalendarzem biodynamicznym.",
+  longPublication: "SeaMesh pomaga ogrodnikom i malym gospodarstwom planowac prace w rytmie dni korzenia, liscia, kwiatu i owocu. Narzedzie laczy kalendarz, zadania i proste rekomendacje dla sezonowej uprawy warzyw.",
+  founderQuote: "Chcemy, zeby planowanie ogrodu bylo spokojniejsze, bardziej swiadome i oparte na rytmie natury.",
+  presentationPreference: "Pokazywac startup jako praktyczne narzedzie agritech dla ekologicznej uprawy warzyw, bez tonu ezoterycznego."
+};
+
+const defaultAkcesMarketingMaterials = [
+  { id: "mat-1", title: "Webinar: jak opowiadac o projekcie w programie", type: "Webinary", description: "Nagranie z krotkimi wskazowkami do komunikacji startupu.", addedAt: "2026-05-08", url: "https://akces.example.com/webinar-marketing" },
+  { id: "mat-2", title: "Prezentacja Akces NCBR dla beneficjentow", type: "Prezentacje", description: "Slajdy do wykorzystania przy spotkaniach z partnerami.", addedAt: "2026-05-12", url: "https://akces.example.com/prezentacja" },
+  { id: "mat-3", title: "Instrukcja oznaczania Akces NCBR", type: "Instrukcje", description: "Zasady uzycia nazwy programu, logotypow i informacji o finansowaniu.", addedAt: "2026-05-15", url: "https://akces.example.com/instrukcja-oznaczania" },
+  { id: "mat-4", title: "Paczka graficzna programu", type: "Grafiki", description: "Logotypy, belki i grafiki do publikacji informacyjnych.", addedAt: "2026-05-18", url: "https://akces.example.com/grafiki" },
+  { id: "mat-5", title: "Wzor posta o udziale w programie", type: "Wzory postow", description: "Gotowa struktura komunikatu do adaptacji przez startup.", addedAt: "2026-05-20", url: "https://akces.example.com/wzor-posta" },
+  { id: "mat-6", title: "Checklista przed publikacja", type: "Inne", description: "Krotka lista sprawdzajaca linki, zgody i oznaczenia.", addedAt: "2026-05-22", url: "https://akces.example.com/checklista" }
+];
+
+const defaultMarketingPublications = [
+  { id: "pub-1", title: "Post o starcie akceleracji", type: "post o startupie", description: "Krotki wpis przedstawiajacy startup i temat projektu.", status: "opublikowana", plannedAt: "2026-05-30", url: "https://akces.example.com/post-seamesh", fileName: "" },
+  { id: "pub-2", title: "Opis na stronie programu", type: "opis na stronie programu", description: "Profil startupu na stronie Akces NCBR.", status: "wyslana do akceptacji", plannedAt: "2026-06-06", url: "", fileName: "opis-do-akceptacji.docx" },
+  { id: "pub-3", title: "Newsletter dla partnerow", type: "newsletter", description: "Wzmianka o projekcie i jego zastosowaniu w ogrodach edukacyjnych.", status: "w przygotowaniu", plannedAt: "2026-06-18", url: "", fileName: "" },
+  { id: "pub-4", title: "Case study po pilocie", type: "case study", description: "Material planowany po pierwszym pilocie z ogrodem spolecznym.", status: "planowana", plannedAt: "2026-09-15", url: "", fileName: "" }
+];
+
+const defaultMarketingContests = [
+  {
+    id: "contest-1",
+    name: "Green Startup Challenge",
+    organizer: "Fundacja Zielone Innowacje",
+    type: "pitch contest",
+    description: "Pitch contest dla startupow rozwijajacych rozwiazania srodowiskowe.",
+    audience: "Startupy agritech, cleantech i impact",
+    deadline: "2026-06-21",
+    status: "w trakcie przygotowania",
+    url: "https://example.com/green-startup",
+    requiredMaterials: "pitch deck, opis projektu, logo, dane zespolu",
+    owner: "Maria Nowak",
+    notes: "Przygotowac wersje pitchu z naciskiem na ogrody spoleczne.",
+    fileName: ""
+  },
+  {
+    id: "contest-2",
+    name: "Impact Demo Day",
+    organizer: "Akces NCBR",
+    type: "wydarzenie",
+    description: "Wydarzenie widocznosciowe dla projektow z potencjalem wdrozeniowym.",
+    audience: "Beneficjenci programu i partnerzy biznesowi",
+    deadline: "2026-07-05",
+    status: "nowy",
+    url: "https://akces.example.com/demo-day",
+    requiredMaterials: "opis 500 znakow, zdjecie zespolu, grafika produktu",
+    owner: "Olga Kaminska",
+    notes: "Sprawdzic, czy demo bedzie gotowe do pokazania.",
+    fileName: ""
+  },
+  {
+    id: "contest-3",
+    name: "Nagroda dla innowacji spolecznych",
+    organizer: "Forum Innowacji",
+    type: "nagroda",
+    description: "Nagroda promujaca projekty o wplywie spolecznym i edukacyjnym.",
+    audience: "Organizacje i startupy impact",
+    deadline: "2026-05-15",
+    status: "archiwalny",
+    url: "https://example.com/nagroda-impact",
+    requiredMaterials: "formularz, opis wplywu, rekomendacja",
+    owner: "Maria Nowak",
+    notes: "Termin miniety, zachowac jako inspiracje do przyszlych naborow.",
+    fileName: ""
+  }
+];
+
+state.marketingPackageItems = defaultMarketingPackageItems.map((item) => ({ ...item }));
+state.marketingProfile = { ...defaultMarketingProfile };
+state.marketingContests = defaultMarketingContests.map((contest) => ({ ...contest }));
+
+function docHistory(id, timestamp, actorName, actorRole, actionType, previousStatus, newStatus, comment, fileName = "", previousFileName = "", newFileName = "") {
+  return {
+    id: `hist-${id}-${timestamp.replaceAll(/[^0-9]/g, "")}`,
+    documentId: id,
+    timestamp,
+    actorName,
+    actorRole,
+    actionType,
+    fileName,
+    previousFileName,
+    newFileName,
+    previousStatus,
+    newStatus,
+    comment
+  };
+}
+
+function mockPdfFile(name, addedBy = "Jan Nowak", addedByRole = "Beneficjent", addedAt = "2026-05-26T14:22:00") {
+  return {
+    id: `file-${name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`,
+    name,
+    type: "application/pdf",
+    addedBy,
+    addedByRole,
+    addedAt,
+    content: ""
+  };
+}
+
+const defaultDocumentWorkflowDocs = [
+  {
+    id: "contract-main",
+    documentType: "contract",
+    title: "Umowa akceleracyjna SeaMesh",
+    typeLabel: "Umowa akceleracyjna",
+    status: "Oczekuje na podpis osoby upowaznionej",
+    currentStep: "Akces / osoba upowazniona podpisuje zweryfikowana umowe.",
+    signaturePath: [
+      { role: "Beneficjent", state: "podpisano" },
+      { role: "Akces / Opiekun Projektu", state: "zweryfikowano" },
+      { role: "Akces / osoba upowazniona", state: "oczekuje" }
+    ],
+    currentFile: mockPdfFile("Umowa_akceleracyjna_SeaMesh_podpis_Beneficjent.pdf"),
+    fileVersions: [],
+    comments: [
+      { id: "comment-contract-1", author: "Julia Bareja", role: "Opiekun Projektu", timestamp: "2026-05-26T15:10:00", text: "Plik zweryfikowany i przekazany do podpisu osoby upowaznionej." }
+    ],
+    history: [
+      docHistory("contract-main", "2026-05-26T14:22:00", "Jan Nowak", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie umowy przez Beneficjenta", "Oczekuje na weryfikacje Akces", "Beneficjent dodal podpisana umowe.", "Umowa_akceleracyjna_SeaMesh_podpis_Beneficjent.pdf", "", "Umowa_akceleracyjna_SeaMesh_podpis_Beneficjent.pdf"),
+      docHistory("contract-main", "2026-05-26T15:10:00", "Julia Bareja", "Opiekun Projektu", "Zweryfikowano dokument", "Oczekuje na weryfikacje Akces", "Oczekuje na podpis osoby upowaznionej", "Plik poprawny, przekazano do podpisu osoby upowaznionej.", "Umowa_akceleracyjna_SeaMesh_podpis_Beneficjent.pdf")
+    ],
+    createdAt: "2026-05-20T10:00:00",
+    updatedAt: "2026-05-26T15:10:00"
+  },
+  ..."Maj 2026,Czerwiec 2026,Lipiec 2026,Sierpien 2026,Wrzesien 2026,Pazdziernik 2026".split(",").map((month, index) => ({
+    id: `wst-${index + 1}`,
+    documentType: "wst",
+    title: `WST miesieczne - ${month}`,
+    typeLabel: "WST miesieczne",
+    month,
+    status: index === 0 ? "Oczekuje na podpis Opiekuna Projektu" : "Oczekuje na dodanie podpisanego WST przez Beneficjenta",
+    currentStep: index === 0 ? "Opiekun Projektu podpisuje / akceptuje dokument WST." : "Beneficjent dodaje podpisany plik PDF WST.",
+    signaturePath: [
+      { role: "Beneficjent", state: index === 0 ? "podpisano" : "oczekuje" },
+      { role: "Opiekun Projektu", state: index === 0 ? "oczekuje" : "oczekuje" },
+      { role: "Osoba upowazniona", state: "oczekuje" }
+    ],
+    currentFile: index === 0 ? mockPdfFile("WST_maj_2026_podpis_Beneficjent.pdf", "Jan Nowak", "Beneficjent", "2026-05-26T14:40:00") : null,
+    fileVersions: [],
+    comments: index === 0 ? [
+      { id: "comment-wst-1", author: "Jan Nowak", role: "Beneficjent", timestamp: "2026-05-26T14:40:00", text: "WST za maj dodany do podpisu Opiekuna Projektu." }
+    ] : [],
+    history: index === 0 ? [
+      docHistory("wst-1", "2026-05-26T14:40:00", "Jan Nowak", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie podpisanego WST przez Beneficjenta", "Oczekuje na podpis Opiekuna Projektu", "Dodano podpisany WST za maj.", "WST_maj_2026_podpis_Beneficjent.pdf", "", "WST_maj_2026_podpis_Beneficjent.pdf")
+    ] : [],
+    createdAt: "2026-05-01T09:00:00",
+    updatedAt: index === 0 ? "2026-05-26T14:40:00" : "2026-05-01T09:00:00"
+  })),
+  {
+    id: "formal-weksel-deklaracja",
+    documentType: "formal",
+    title: "Deklaracja wekslowa",
+    typeLabel: "Dokument formalny",
+    category: "deklaracja wekslowa",
+    status: "Do poprawy",
+    currentStep: "Beneficjent dodaje poprawiona wersje dokumentu PDF.",
+    signaturePath: [
+      { role: "Beneficjent", state: "do poprawy" },
+      { role: "Akces", state: "oczekuje" }
+    ],
+    currentFile: null,
+    fileVersions: [
+      mockPdfFile("Deklaracja_wekslowa_wersja_bledna.pdf", "Jan Nowak", "Beneficjent", "2026-05-24T11:30:00")
+    ],
+    comments: [
+      { id: "comment-formal-1", author: "Julia Bareja", role: "Opiekun Projektu", timestamp: "2026-05-26T15:12:00", text: "Brakuje podpisu osoby uprawnionej do reprezentacji." }
+    ],
+    history: [
+      docHistory("formal-weksel-deklaracja", "2026-05-24T11:30:00", "Jan Nowak", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie pliku", "Oczekuje na weryfikacje Akces", "Dodano deklaracje wekslowa.", "Deklaracja_wekslowa_wersja_bledna.pdf", "", "Deklaracja_wekslowa_wersja_bledna.pdf"),
+      docHistory("formal-weksel-deklaracja", "2026-05-26T15:12:00", "Julia Bareja", "Opiekun Projektu", "Usunieto aktualny plik", "Oczekuje na weryfikacje Akces", "Do poprawy", "Bledna wersja dokumentu. Brakuje podpisu osoby uprawnionej.", "Deklaracja_wekslowa_wersja_bledna.pdf", "Deklaracja_wekslowa_wersja_bledna.pdf", "")
+    ],
+    createdAt: "2026-05-20T10:00:00",
+    updatedAt: "2026-05-26T15:12:00"
+  },
+  {
+    id: "formal-pelnomocnictwo",
+    documentType: "formal",
+    title: "Pelnomocnictwo do reprezentacji",
+    typeLabel: "Dokument formalny",
+    category: "pelnomocnictwo",
+    status: "Zaakceptowany",
+    currentStep: "Dokument zaakceptowany, nie wymaga dzialania.",
+    signaturePath: [
+      { role: "Beneficjent", state: "dodano" },
+      { role: "Akces", state: "zaakceptowano" }
+    ],
+    currentFile: mockPdfFile("Pelnomocnictwo_SeaMesh.pdf", "Maria Nowak", "Beneficjent", "2026-05-19T09:20:00"),
+    fileVersions: [],
+    comments: [],
+    history: [
+      docHistory("formal-pelnomocnictwo", "2026-05-19T09:20:00", "Maria Nowak", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie pliku", "Oczekuje na weryfikacje Akces", "Dodano pelnomocnictwo.", "Pelnomocnictwo_SeaMesh.pdf", "", "Pelnomocnictwo_SeaMesh.pdf"),
+      docHistory("formal-pelnomocnictwo", "2026-05-19T12:05:00", "Julia Bareja", "Opiekun Projektu", "Zaakceptowano dokument", "Oczekuje na weryfikacje Akces", "Zaakceptowany", "Dokument poprawny.", "Pelnomocnictwo_SeaMesh.pdf")
+    ],
+    createdAt: "2026-05-19T09:20:00",
+    updatedAt: "2026-05-19T12:05:00"
+  },
+  {
+    id: "other-1",
+    documentType: "other",
+    title: "Dodatkowa specyfikacja projektu",
+    typeLabel: "Inny dokument",
+    category: "zalacznik projektowy",
+    description: "Dokument pomocniczy do rozmow z opiekunem projektu.",
+    status: "Oczekuje na weryfikacje Akces",
+    currentStep: "Akces weryfikuje dodany dokument.",
+    signaturePath: [
+      { role: "Beneficjent", state: "dodano" },
+      { role: "Akces", state: "weryfikacja" }
+    ],
+    currentFile: mockPdfFile("Specyfikacja_projektu_SeaMesh.pdf", "Olga Kaminska", "Beneficjent", "2026-05-23T10:30:00"),
+    fileVersions: [],
+    comments: [],
+    history: [
+      docHistory("other-1", "2026-05-23T10:30:00", "Olga Kaminska", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie pliku", "Oczekuje na weryfikacje Akces", "Dodano specyfikacje projektu.", "Specyfikacja_projektu_SeaMesh.pdf", "", "Specyfikacja_projektu_SeaMesh.pdf")
+    ],
+    createdAt: "2026-05-23T10:30:00",
+    updatedAt: "2026-05-23T10:30:00"
+  },
+  {
+    id: "archive-1",
+    documentType: "archive",
+    title: "Wersja robocza oswiadczenia",
+    typeLabel: "Archiwum",
+    category: "oswiadczenie",
+    status: "Archiwalny",
+    currentStep: "Dokument archiwalny tylko do podgladu.",
+    signaturePath: [
+      { role: "Beneficjent", state: "zastapiono nowsza wersja" },
+      { role: "Akces", state: "zarchiwizowano" }
+    ],
+    currentFile: mockPdfFile("Oswiadczenie_wersja_robocza.pdf", "Jan Nowak", "Beneficjent", "2026-05-12T13:00:00"),
+    fileVersions: [],
+    comments: [
+      { id: "comment-archive-1", author: "Admin", role: "Admin", timestamp: "2026-05-18T16:30:00", text: "Dokument zastapiony nowsza wersja." }
+    ],
+    history: [
+      docHistory("archive-1", "2026-05-12T13:00:00", "Jan Nowak", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie pliku", "Oczekuje na weryfikacje Akces", "Dodano wersje robocza.", "Oswiadczenie_wersja_robocza.pdf", "", "Oswiadczenie_wersja_robocza.pdf"),
+      docHistory("archive-1", "2026-05-18T16:30:00", "Admin", "Admin", "Przeniesiono do archiwum", "Oczekuje na weryfikacje Akces", "Archiwalny", "Dokument zastapiony nowsza wersja.", "Oswiadczenie_wersja_robocza.pdf")
+    ],
+    createdAt: "2026-05-12T13:00:00",
+    updatedAt: "2026-05-18T16:30:00"
+  }
+];
+
+state.documentWorkflowDocs = defaultDocumentWorkflowDocs.map((document) => ({
+  ...document,
+  signaturePath: document.signaturePath.map((step) => ({ ...step })),
+  currentFile: document.currentFile ? { ...document.currentFile } : null,
+  fileVersions: document.fileVersions.map((file) => ({ ...file })),
+  comments: document.comments.map((comment) => ({ ...comment })),
+  history: document.history.map((entry) => ({ ...entry }))
+}));
 
 const app = document.querySelector("#app");
 const actorSelect = document.querySelector("#actor-select");
 const scopeSelect = document.querySelector("#scope-select");
 const scopeField = scopeSelect.closest(".field.compact");
 const toast = document.querySelector("#toast");
+const shell = document.querySelector(".app-shell");
+const currentViewLabel = document.querySelector("#current-view-label");
+const contextMenu = document.querySelector("#context-menu");
+const contextToggle = document.querySelector("[data-context-toggle]");
+const sidebarCollapse = document.querySelector("[data-sidebar-collapse]");
 
 function money(value) {
   return Number(value || 0).toLocaleString("pl-PL", {
@@ -92,6 +807,14 @@ function money(value) {
 function formatDate(value) {
   if (!value) return "-";
   return new Intl.DateTimeFormat("pl-PL").format(new Date(`${value}T00:00:00`));
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("pl-PL", {
+    dateStyle: "short",
+    timeStyle: "short"
+  }).format(new Date(value));
 }
 
 function dateKey(date) {
@@ -187,12 +910,31 @@ async function loadState() {
   renderView();
 }
 
+function navViewFor(view = state.activeView) {
+  return view === "add-expense" ? "expenses" : view;
+}
+
+function syncShellState() {
+  shell.classList.toggle("is-sidebar-collapsed", state.sidebarCollapsed);
+  shell.classList.toggle("is-sidebar-open", state.mobileSidebarOpen);
+  document.querySelectorAll(".nav-button[data-view]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.view === navViewFor());
+  });
+  if (currentViewLabel) {
+    currentViewLabel.textContent = moduleLabels[state.activeView] || moduleLabels[navViewFor()] || "Akces NCBR";
+  }
+  if (sidebarCollapse) {
+    sidebarCollapse.setAttribute("aria-expanded", String(!state.sidebarCollapsed));
+    sidebarCollapse.setAttribute("aria-label", state.sidebarCollapsed ? "Rozwin panel boczny" : "Zwin panel boczny");
+    sidebarCollapse.querySelector("span").textContent = state.sidebarCollapsed ? ">" : "<";
+  }
+}
+
 function setView(view) {
   state.activeView = view;
   if (view !== "documents") state.showDocumentForm = false;
-  document.querySelectorAll(".nav-button").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.view === view);
-  });
+  state.mobileSidebarOpen = false;
+  syncShellState();
   renderView();
 }
 
@@ -220,6 +962,7 @@ function renderShell() {
     scopeSelect.innerHTML = `<option value="${state.actorId}">${escapeHtml(activeActor()?.name || "Beneficjent")}</option>`;
     scopeSelect.value = state.actorId;
   }
+  syncShellState();
 }
 
 function beneficiaryOptions(selectedId = "") {
@@ -233,6 +976,168 @@ function beneficiaryOptions(selectedId = "") {
 
 function optionList(values, selected = "", formatter = (value) => value) {
   return values.map((value) => `<option value="${value}" ${String(value) === String(selected) ? "selected" : ""}>${formatter(value)}</option>`).join("");
+}
+
+function initials(value = "") {
+  return String(value)
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0] || "")
+    .join("")
+    .toUpperCase() || "AK";
+}
+
+function contactAvatar(contact, className = "") {
+  const extraClass = className ? ` ${className}` : "";
+  if (contact.photoUrl) {
+    return `<span class="contact-avatar${extraClass}"><img src="${escapeHtml(contact.photoUrl)}" alt="" /></span>`;
+  }
+  return `<span class="contact-avatar${extraClass}" aria-hidden="true">${escapeHtml(initials(contact.name))}</span>`;
+}
+
+function selectedDashboardBeneficiary() {
+  return getBeneficiary(effectiveBeneficiaryId()) || beneficiaryList()[0] || activeActor();
+}
+
+function selectedStartupCard(beneficiary) {
+  return state.data.startupCards[beneficiary?.id] || {};
+}
+
+function projectDashboardData() {
+  const beneficiary = selectedDashboardBeneficiary();
+  const card = selectedStartupCard(beneficiary);
+  const companyName = card.companyName || beneficiary?.name || "Twoj startup";
+  const acronym = card.acronym || accelerationProject.acronym;
+  return {
+    companyName,
+    projectName: card.projectScope || accelerationProject.projectName,
+    acronym,
+    supervisor: card.projectSupervisor || "Anna Kowalska"
+  };
+}
+
+function startupProfileBeneficiary() {
+  return selectedDashboardBeneficiary();
+}
+
+function startupProfileBase() {
+  const beneficiary = startupProfileBeneficiary();
+  const card = selectedStartupCard(beneficiary);
+  const companyName = card.companyName || beneficiary?.name || "BioWarzywa Sp. z o.o.";
+  const acronym = card.acronym || "BioKalendarz";
+  const projectScope = "System planowania upraw warzyw zgodnie z kalendarzem biodynamicznym, z podpowiedziami dla dni korzenia, liscia, kwiatu i owocu.";
+  return {
+    summary: {
+      companyName,
+      acronym,
+      programStatus: "Aktywny",
+      projectName: projectScope,
+      program: "HPN IMPAKT / Akces NCBR",
+      supervisor: card.projectSupervisor || "Anna Kowalska"
+    },
+    basics: {
+      companyName,
+      acronym,
+      legalForm: "spolka z ograniczona odpowiedzialnoscia",
+      nip: card.nip || "5250000000",
+      krs: card.krs || "0000123456",
+      regon: card.regon || "012345678",
+      registeredAddress: card.mailingAddress || "ul. Innowacyjna 12, 00-001 Warszawa",
+      website: "https://seamesh.example.com",
+      social: "https://linkedin.com/company/seamesh",
+      industry: "rolnictwo ekologiczne / agrotech / planowanie upraw",
+      companyStatus: "Aktywny w programie"
+    },
+    project: {
+      projectName: projectScope,
+      projectAcronym: acronym,
+      program: "HPN IMPAKT / Akces NCBR",
+      contractNumber: "AKCES/HPN/2026/014",
+      agreementDate: "28.04.2026",
+      accelerationPeriod: "28.04.2026-27.10.2026",
+      programStage: "Realizacja akceleracji",
+      thematicArea: "zrownowazone rolnictwo, ogrodnictwo i technologie wspierajace uprawy",
+      developmentStage: "MVP / pilotaz",
+      projectScope
+    },
+    description: {
+      shortDescription: "Startup tworzy praktyczny kalendarz biodynamiczny dla uprawy warzyw, ktory pomaga planowac siew, pikowanie, sadzenie, podlewanie i zbiory w odpowiednich dniach.",
+      problem: "Osoby uprawiajace warzywa czesto wiedza, co chca posiac, ale nie maja prostego narzedzia pokazujacego, kiedy pracowac z korzeniem, lisciem, kwiatem albo owocem.",
+      solution: "Aplikacja tlumaczy kalendarz biodynamiczny na konkretne zadania: w dni korzenia planujemy marchew, buraki i pietruszke, w dni liscia salaty i ziola, w dni kwiatu rosliny kwitnace, a w dni owocu pomidory, ogorki, dynie i papryke.",
+      targetGroup: "Mali ogrodnicy, gospodarstwa ekologiczne, miejskie ogrody spoleczne, edukatorzy przyrodniczy i osoby prowadzace przydomowe warzywniki.",
+      advantage: "Rozwiazanie laczy proste instrukcje ogrodnicze z rytmem kalendarza biodynamicznego, dzieki czemu uzytkownik widzi nie tylko daty, ale tez sens pracy w danym dniu.",
+      useCases: "Planowanie sezonu warzywnego, przypomnienia o siewie i zbiorach, edukacja ogrodnicza, prowadzenie notatek z grzadek oraz porownywanie efektow prac wykonanych w dniach korzenia, liscia, kwiatu i owocu."
+    },
+    people: [
+      {
+        name: "Maria Nowak",
+        function: "CEO",
+        projectRole: "liderka projektu",
+        email: "maria.nowak@seamesh.example.com",
+        phone: "+48 501 100 200",
+        type: "kontakt glowny",
+        representation: "tak"
+      },
+      {
+        name: "Adam Zielinski",
+        function: "CFO",
+        projectRole: "kontakt finansowy",
+        email: "adam.zielinski@seamesh.example.com",
+        phone: "+48 501 200 300",
+        type: "kontakt finansowy",
+        representation: "nie"
+      },
+      {
+        name: "Olga Kaminska",
+        function: "CTO",
+        projectRole: "koordynacja techniczna",
+        email: "olga.kaminska@seamesh.example.com",
+        phone: "+48 501 300 400",
+        type: "kontakt techniczny",
+        representation: "nie"
+      }
+    ],
+    correspondence: {
+      correspondenceAddress: card.mailingAddress || "ul. Innowacyjna 12, 00-001 Warszawa",
+      paperDocumentsAddress: "ul. Innowacyjna 12, pok. 4.2, 00-001 Warszawa",
+      formalEmail: "formal@seamesh.example.com",
+      preferredContact: "e-mail, a w sprawach pilnych telefon do kontaktu glownego",
+      notes: "Prosba o kierowanie korespondencji formalnej rownolegle do osoby kontaktowej i na adres formalny."
+    }
+  };
+}
+
+function currentStartupProfile() {
+  const beneficiary = startupProfileBeneficiary();
+  const key = beneficiary?.id || "default";
+  const base = startupProfileBase();
+  const override = state.startupProfileOverrides[key] || {};
+  return {
+    ...base,
+    ...override,
+    summary: { ...base.summary, ...(override.summary || {}) },
+    basics: { ...base.basics, ...(override.basics || {}) },
+    project: { ...base.project, ...(override.project || {}) },
+    description: { ...base.description, ...(override.description || {}) },
+    people: override.people || base.people,
+    correspondence: { ...base.correspondence, ...(override.correspondence || {}) }
+  };
+}
+
+function updateStartupProfile(patch) {
+  const beneficiary = startupProfileBeneficiary();
+  const key = beneficiary?.id || "default";
+  const current = state.startupProfileOverrides[key] || {};
+  state.startupProfileOverrides[key] = {
+    ...current,
+    ...patch,
+    summary: { ...(current.summary || {}), ...(patch.summary || {}) },
+    basics: { ...(current.basics || {}), ...(patch.basics || {}) },
+    project: { ...(current.project || {}), ...(patch.project || {}) },
+    description: { ...(current.description || {}), ...(patch.description || {}) },
+    correspondence: { ...(current.correspondence || {}), ...(patch.correspondence || {}) }
+  };
 }
 
 function attachmentList(attachments = []) {
@@ -262,109 +1167,418 @@ function pageHead(title, description, action = "") {
   `;
 }
 
-function renderStart() {
-  const totalGross = state.data.expenses.reduce((sum, expense) => sum + Number(expense.grossAmount || 0), 0);
-  const totalNet = state.data.expenses.reduce((sum, expense) => sum + Number(expense.netAmount || 0), 0);
-  app.innerHTML = `
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">${escapeHtml(currentScopeLabel())}</p>
-        <h1>Akces NCBR</h1>
-        <p>
-          Jedno miejsce do prowadzenia rozliczen, dokumentow, karty startupu i terminow.
-          ADMIN moze pracowac na wszystkich danych albo zawezic widok do jednego beneficjenta.
-        </p>
-        <div class="hero-actions">
-          <button class="button" data-go="startup-card">Karta Startupu</button>
-          <button class="button secondary" data-go="expenses">Wydatki</button>
-          <button class="button ghost" data-go="calendar">Kalendarz</button>
+function filteredAddressBookContacts() {
+  const search = state.contactSearch.trim().toLowerCase();
+  return state.addressBookContacts.filter((contact) => {
+    const categoryMatches = state.contactCategory === "all" || contact.category === state.contactCategory;
+    const text = [contact.name, contact.position, contact.email, contact.organization, contact.phone].join(" ").toLowerCase();
+    return categoryMatches && (!search || text.includes(search));
+  });
+}
+
+function renderContactForm() {
+  if (!state.addressBookFormOpen) return "";
+  const contact = state.addressBookContacts.find((item) => item.id === state.editingContactId) || {};
+  return `
+    <form class="contact-form" id="contact-form">
+      <input type="hidden" name="id" value="${escapeHtml(contact.id || "")}" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="contact-name">Imie i nazwisko</label>
+          <input id="contact-name" name="name" value="${escapeHtml(contact.name || "")}" required />
+        </div>
+        <div class="field">
+          <label for="contact-position">Stanowisko</label>
+          <input id="contact-position" name="position" value="${escapeHtml(contact.position || "")}" required />
+        </div>
+        <div class="field">
+          <label for="contact-organization">Organizacja / dzial</label>
+          <input id="contact-organization" name="organization" value="${escapeHtml(contact.organization || "")}" required />
+        </div>
+        <div class="field">
+          <label for="contact-email">E-mail</label>
+          <input id="contact-email" name="email" type="email" value="${escapeHtml(contact.email || "")}" required />
+        </div>
+        <div class="field">
+          <label for="contact-phone">Telefon</label>
+          <input id="contact-phone" name="phone" value="${escapeHtml(contact.phone || "")}" />
+        </div>
+        <div class="field">
+          <label for="contact-category">Kategoria kontaktu</label>
+          <select id="contact-category" name="category">
+            ${optionList(contactCategories, contact.category || "Program")}
+          </select>
+        </div>
+        <div class="field">
+          <label for="contact-photo-url">URL zdjecia</label>
+          <input id="contact-photo-url" name="photoUrl" value="${escapeHtml(contact.photoUrl || "")}" placeholder="https://..." />
+        </div>
+        <div class="field">
+          <label for="contact-photo-file">Zdjecie kontaktu</label>
+          <input id="contact-photo-file" name="photoFile" type="file" accept="image/*" />
+        </div>
+        <div class="field is-wide">
+          <label for="contact-description">Opis</label>
+          <textarea id="contact-description" name="description">${escapeHtml(contact.description || "")}</textarea>
         </div>
       </div>
-      <div class="hero-board" aria-label="Podsumowanie">
-        <div class="metric-tile">
-          <strong>${state.data.expenses.length}</strong>
-          <span>wydatki w aktualnym zakresie</span>
-        </div>
-        <div class="metric-tile">
-          <strong>${money(totalNet)}</strong>
-          <span>laczna kwota netto</span>
-        </div>
-        <div class="metric-tile">
-          <strong>${money(totalGross)}</strong>
-          <span>laczna kwota brutto</span>
-        </div>
+      <div class="form-actions">
+        <button class="button" type="submit" data-submit-contact>${contact.id ? "Zapisz kontakt" : "Dodaj kontakt"}</button>
+        <button class="button secondary" type="button" data-contact-form-close>Anuluj</button>
       </div>
-    </section>
-    <section class="feature-grid" style="margin-top: 16px;">
-      <article class="feature-tile">
-        <h3>Karta Startupu</h3>
-        <p>Podstawowe dane beneficjenta, zespol, harmonogram, zakres projektu i status dokumentow.</p>
-      </article>
-      <article class="feature-tile">
-        <h3>Wydatki z zalacznikami</h3>
-        <p>Faktura albo inny dokument sa wymagane, a VAT i brutto licza sie automatycznie.</p>
-      </article>
-      <article class="feature-tile">
-        <h3>Dokumenty lokalne</h3>
-        <p>Pliki trafiaja do folderow beneficjenta i sa dostepne z poziomu listy dokumentow.</p>
-      </article>
-      <article class="feature-tile">
-        <h3>Kalendarz kolorami</h3>
-        <p>Wydarzenia maja start, koniec, kolor i szybkie dodawanie przez plus w dniu.</p>
-      </article>
-    </section>
+    </form>
   `;
 }
 
-function renderStartupCard() {
-  const beneficiaries = beneficiaryList();
-  const selectedId = effectiveBeneficiaryId() || state.startupCardBeneficiaryId || beneficiaries[0]?.id || "";
-  state.startupCardBeneficiaryId = selectedId;
-  const card = state.data.startupCards[selectedId] || {};
-  const selectedBeneficiary = getBeneficiary(selectedId);
-  const editable = isAdmin() && Boolean(selectedId);
-  const beneficiaryChooser = isAdmin() && state.scopeBeneficiaryId === "all"
-    ? `<div class="field context-field">
-        <label for="startup-beneficiary">Beneficjent</label>
-        <select id="startup-beneficiary">${beneficiaryOptions(selectedId)}</select>
-      </div>`
-    : "";
-  const fields = startupFields
-    .map(([name, label]) => `
-      <div class="field ${["contactPeople", "mailingAddress", "mentors", "experts", "projectSchedule", "projectScope", "contractAttachments", "documentStatus"].includes(name) ? "is-wide" : ""}">
-        <label for="startup-${name}">${label}</label>
-        ${editable
-          ? `<textarea id="startup-${name}" name="${name}" ${["companyName", "acronym", "nip", "krs", "regon", "projectSupervisor"].includes(name) ? "class=\"short-textarea\"" : ""}>${escapeHtml(card[name] || "")}</textarea>`
-          : `<div class="readonly-box">${escapeHtml(card[name] || "-")}</div>`}
-      </div>
-    `)
-    .join("");
+function renderAddressBookModal() {
+  if (!state.addressBookOpen) return "";
+  const contacts = filteredAddressBookContacts();
+  return `
+    <div class="modal-backdrop address-book-backdrop" data-close-address-book>
+      <section class="modal address-book-modal" role="dialog" aria-modal="true" aria-label="Ksiazka teleadresowa" data-address-book-panel>
+        <div class="section-head compact">
+          <div>
+            <p class="eyebrow">Kontakty Akces</p>
+            <h1>Ksiazka teleadresowa</h1>
+            <p>Najwazniejsze kontakty dla Beneficjenta. Lista jest lokalnym mockiem gotowym do podpiecia pod backend.</p>
+          </div>
+          <button class="button ghost" type="button" data-close-address-book>Zamknij</button>
+        </div>
+        <div class="address-book-tools">
+          <div class="field">
+            <label for="contact-search">Szukaj kontaktu</label>
+            <input id="contact-search" type="search" value="${escapeHtml(state.contactSearch)}" placeholder="Imie, stanowisko, e-mail" />
+          </div>
+          <div class="field">
+            <label for="contact-category-filter">Kategoria</label>
+            <select id="contact-category-filter">
+              <option value="all">Wszystkie</option>
+              ${optionList(contactCategories, state.contactCategory)}
+            </select>
+          </div>
+          <button class="button" type="button" data-add-contact>Dodaj kontakt</button>
+        </div>
+        ${renderContactForm()}
+        <div class="contact-list">
+          ${contacts.map((contact) => `
+            <article class="contact-row">
+              ${contactAvatar(contact)}
+              <div>
+                <div class="contact-row-head">
+                  <div>
+                    <h3>${escapeHtml(contact.name)}</h3>
+                    <p>${escapeHtml(contact.position)}</p>
+                  </div>
+                  <span class="status-pill">${escapeHtml(contact.category)}</span>
+                </div>
+                <p class="meta">
+                  <span>${escapeHtml(contact.organization)}</span>
+                  <span>${escapeHtml(contact.email)}</span>
+                  <span>${escapeHtml(contact.phone || "-")}</span>
+                </p>
+                <p class="contact-description">${escapeHtml(contact.description || "Kontakt pomocniczy.")}</p>
+                <div class="contact-actions">
+                  <button class="button secondary" type="button" data-edit-contact="${escapeHtml(contact.id)}">Edytuj</button>
+                  <button class="button ghost" type="button" data-delete-contact="${escapeHtml(contact.id)}">Usun</button>
+                </div>
+              </div>
+            </article>
+          `).join("") || `<div class="empty-state card">Brak kontaktow dla wybranych filtrow.</div>`}
+        </div>
+      </section>
+    </div>
+  `;
+}
 
+function renderStart() {
+  const dashboard = projectDashboardData();
+  const advisor = state.addressBookContacts.find((contact) => contact.id === "opiekun-projektu") || state.addressBookContacts[0];
+  const unreadCount = akcesNotifications.length;
   app.innerHTML = `
-    ${pageHead(
-      "Karta Startupu",
-      selectedBeneficiary
-        ? "ADMIN edytuje dane karty, a beneficjent ma aktualny podglad najwazniejszych informacji o projekcie."
-        : "Wybierz beneficjenta, zeby zobaczyc lub uzupelnic Karte Startupu.",
-      beneficiaryChooser
-    )}
-    <form class="form-panel startup-form" id="startup-card-form">
-      <input type="hidden" name="beneficiaryId" value="${escapeHtml(selectedId)}" />
-      <div class="form-grid">
-        ${fields || `<div class="empty-state">Brak aktywnych beneficjentow.</div>`}
-        <div class="field is-wide">
-          <label for="startup-bio">BIO / opis startupu</label>
-          ${editable
-            ? `<textarea id="startup-bio" name="bio" class="bio-textarea">${escapeHtml(card.bio || "")}</textarea>`
-            : `<div class="readonly-box large">${escapeHtml(card.bio || "-")}</div>`}
+    <section class="beneficiary-dashboard">
+      <div class="dashboard-toolbar">
+        <div>
+          <p class="eyebrow">${escapeHtml(currentScopeLabel())}</p>
+          <h1>Start</h1>
+        </div>
+        <div class="notification-menu">
+          <button class="notification-button" type="button" data-notifications-toggle aria-expanded="${state.notificationsOpen}">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M18 16v-5a6 6 0 0 0-12 0v5l-2 2h16l-2-2Z"></path>
+              <path d="M10 21h4"></path>
+            </svg>
+            <strong>${unreadCount}</strong>
+          </button>
+          <div class="notifications-panel" ${state.notificationsOpen ? "" : "hidden"}>
+            <h2>Komunikaty od Akces</h2>
+            ${akcesNotifications.map((item) => `
+              <article>
+                <strong>${escapeHtml(item.title)}</strong>
+                <p>${escapeHtml(item.body)}</p>
+                <span>${escapeHtml(item.time)}</span>
+              </article>
+            `).join("")}
+            <button class="button secondary" type="button">Zobacz wszystkie komunikaty</button>
+          </div>
         </div>
       </div>
-      ${editable
-        ? `<div class="form-actions">
-            <button class="button" type="submit">Zapisz Karte Startupu</button>
-          </div>`
-        : ""}
-    </form>
+
+      <section class="welcome-panel">
+        <div>
+          <p class="eyebrow">Panel Beneficjenta</p>
+          <h2>Witaj, ${escapeHtml(dashboard.companyName)}</h2>
+          <p>Projekt: ${escapeHtml(dashboard.projectName)} / ${escapeHtml(dashboard.acronym)}</p>
+        </div>
+        <dl class="project-facts">
+          <div><dt>Program</dt><dd>${escapeHtml(accelerationProject.program)}</dd></div>
+          <div><dt>Etap</dt><dd>${escapeHtml(accelerationProject.stage)}</dd></div>
+          <div><dt>Okres akceleracji</dt><dd>${escapeHtml(accelerationProject.period)}</dd></div>
+          <div><dt>Opiekun projektu</dt><dd>${escapeHtml(dashboard.supervisor)}</dd></div>
+          <div><dt>Status</dt><dd>${escapeHtml(accelerationProject.status)}</dd></div>
+        </dl>
+        <div class="progress-block" aria-label="Postep akceleracji">
+          <div>
+            <strong>Akceleracja: ${accelerationProject.progress}% czasu za nami</strong>
+            <span>${escapeHtml(accelerationProject.period)}</span>
+          </div>
+          <div class="progress-track"><span style="width: ${accelerationProject.progress}%"></span></div>
+        </div>
+      </section>
+
+      <div class="dashboard-grid">
+        <section class="attention-panel">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">Priorytety</p>
+              <h1>Co wymaga Twojej uwagi</h1>
+            </div>
+          </div>
+          <div class="task-list">
+            ${attentionTasks.map((task) => `
+              <article class="task-card">
+                <div>
+                  <span class="status-pill">${escapeHtml(task.status)}</span>
+                  <h3>${escapeHtml(task.title)}</h3>
+                  <p>${escapeHtml(task.description)}</p>
+                  ${task.due ? `<span class="task-due">Termin: ${escapeHtml(task.due)}</span>` : ""}
+                </div>
+                <button class="button secondary" type="button" data-go="${escapeHtml(task.view)}">${escapeHtml(task.action)}</button>
+              </article>
+            `).join("")}
+          </div>
+        </section>
+
+        <aside class="supervisor-card">
+          ${contactAvatar(advisor, "large")}
+          <p class="eyebrow">Twoj opiekun projektu</p>
+          <h2>${escapeHtml(advisor.name)}</h2>
+          <p>${escapeHtml(advisor.position)}</p>
+          <dl>
+            <div><dt>E-mail</dt><dd><a href="mailto:${escapeHtml(advisor.email)}">${escapeHtml(advisor.email)}</a></dd></div>
+            <div><dt>Telefon</dt><dd><a href="tel:${escapeHtml(advisor.phone)}">${escapeHtml(advisor.phone)}</a></dd></div>
+          </dl>
+          <div class="supervisor-actions">
+            <a class="button" href="mailto:${escapeHtml(advisor.email)}">Napisz wiadomosc</a>
+            <button class="button secondary" type="button" data-open-address-book>Kontakty</button>
+          </div>
+        </aside>
+      </div>
+
+      <section class="quick-links">
+        <button class="quick-link" type="button" data-go="documents"><span>DK</span><strong>Dokumenty</strong></button>
+        <button class="quick-link" type="button" data-go="mentoring"><span>MT</span><strong>Mentoring</strong></button>
+        <button class="quick-link" type="button" data-go="expenses"><span>GW</span><strong>Grant i wydatki</strong></button>
+        <button class="quick-link" type="button" data-go="calendar"><span>KL</span><strong>Kalendarz</strong></button>
+      </section>
+    </section>
+    ${renderAddressBookModal()}
+  `;
+}
+
+function infoGrid(items) {
+  return `
+    <div class="profile-info-grid">
+      ${items.map(([label, value]) => `
+        <article>
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value || "-")}</strong>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function profileEditField(name, label, value, wide = false, multiline = false) {
+  return `
+    <div class="field ${wide ? "is-wide" : ""}">
+      <label for="profile-${name}">${escapeHtml(label)}</label>
+      ${multiline
+        ? `<textarea id="profile-${name}" name="${name}">${escapeHtml(value || "")}</textarea>`
+        : `<input id="profile-${name}" name="${name}" value="${escapeHtml(value || "")}" />`}
+    </div>
+  `;
+}
+
+function renderStartupProfileContent(profile) {
+  const editing = state.startupProfileEditing;
+  if (state.startupProfileTab === "basics") {
+    const fields = [
+      ["companyName", "Nazwa spolki"],
+      ["acronym", "Akronim / nazwa skrocona"],
+      ["legalForm", "Forma prawna"],
+      ["nip", "NIP"],
+      ["krs", "KRS"],
+      ["regon", "REGON"],
+      ["registeredAddress", "Adres siedziby"],
+      ["website", "Strona internetowa"],
+      ["social", "LinkedIn / social media"],
+      ["industry", "Branza / obszar dzialalnosci"],
+      ["companyStatus", "Status firmy w programie"]
+    ];
+    return editing
+      ? `<div class="form-grid">${fields.map(([name, label]) => profileEditField(name, label, profile.basics[name], ["registeredAddress", "social", "industry"].includes(name))).join("")}</div>`
+      : infoGrid(fields.map(([name, label]) => [label, profile.basics[name]]));
+  }
+
+  if (state.startupProfileTab === "project") {
+    const fields = [
+      ["projectName", "Pelna nazwa projektu"],
+      ["projectAcronym", "Akronim projektu"],
+      ["program", "Program"],
+      ["contractNumber", "Numer umowy akceleracyjnej"],
+      ["agreementDate", "Data podpisania umowy"],
+      ["accelerationPeriod", "Okres akceleracji"],
+      ["programStage", "Etap udzialu w programie"],
+      ["thematicArea", "Obszar tematyczny projektu"],
+      ["developmentStage", "Etap rozwoju rozwiazania"],
+      ["projectScope", "Zakres projektu w programie"]
+    ];
+    return editing
+      ? `<div class="form-grid">${fields.map(([name, label]) => profileEditField(name, label, profile.project[name], ["projectName", "thematicArea", "projectScope"].includes(name), name === "projectScope")).join("")}</div>`
+      : infoGrid(fields.map(([name, label]) => [label, profile.project[name]]));
+  }
+
+  if (state.startupProfileTab === "description") {
+    const cards = [
+      ["shortDescription", "Krotki opis startupu"],
+      ["problem", "Problem"],
+      ["solution", "Rozwiazanie"],
+      ["targetGroup", "Grupa docelowa"],
+      ["advantage", "Przewaga konkurencyjna"],
+      ["useCases", "Potencjalne zastosowania"]
+    ];
+    return editing
+      ? `<div class="form-grid">${cards.map(([name, label]) => profileEditField(name, label, profile.description[name], true, true)).join("")}</div>`
+      : `<div class="description-card-grid">${cards.map(([name, label]) => `
+          <article class="description-card">
+            <h3>${escapeHtml(label)}</h3>
+            <p>${escapeHtml(profile.description[name])}</p>
+          </article>
+        `).join("")}</div>`;
+  }
+
+  if (state.startupProfileTab === "people") {
+    if (editing) {
+      return `
+        <div class="contact-person-edit-list">
+          ${profile.people.map((person, index) => `
+            <article class="contact-person-edit" data-profile-person="${index}">
+              ${profileEditField("name", "Imie i nazwisko", person.name)}
+              ${profileEditField("function", "Funkcja w spolce", person.function)}
+              ${profileEditField("projectRole", "Rola w projekcie", person.projectRole)}
+              ${profileEditField("email", "E-mail", person.email)}
+              ${profileEditField("phone", "Telefon", person.phone)}
+              ${profileEditField("type", "Typ kontaktu", person.type)}
+              ${profileEditField("representation", "Uprawniona do reprezentacji / podpisu", person.representation, true)}
+            </article>
+          `).join("")}
+        </div>
+        <button class="button secondary" type="button" data-add-profile-person>Dodaj osobe kontaktowa</button>
+      `;
+    }
+    return `
+      <div class="contact-person-grid">
+        ${profile.people.map((person) => `
+          <article class="contact-person-card">
+            <div class="contact-avatar" aria-hidden="true">${escapeHtml(initials(person.name))}</div>
+            <div>
+              <span class="status-pill">${escapeHtml(person.type)}</span>
+              <h3>${escapeHtml(person.name)}</h3>
+              <p>${escapeHtml(person.function)} / ${escapeHtml(person.projectRole)}</p>
+              <dl>
+                <div><dt>E-mail</dt><dd><a href="mailto:${escapeHtml(person.email)}">${escapeHtml(person.email)}</a></dd></div>
+                <div><dt>Telefon</dt><dd><a href="tel:${escapeHtml(person.phone)}">${escapeHtml(person.phone)}</a></dd></div>
+                <div><dt>Reprezentacja</dt><dd>${escapeHtml(person.representation)}</dd></div>
+              </dl>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+      <button class="button secondary" type="button" data-edit-startup-profile>${isAdmin() ? "Dodaj osobe kontaktowa" : "Zglos zmiane danych kontaktowych"}</button>
+    `;
+  }
+
+  const fields = [
+    ["correspondenceAddress", "Adres do korespondencji"],
+    ["paperDocumentsAddress", "Adres do wysylki dokumentow papierowych"],
+    ["formalEmail", "E-mail do komunikacji formalnej"],
+    ["preferredContact", "Preferowany sposob kontaktu"],
+    ["notes", "Dodatkowe uwagi do korespondencji"]
+  ];
+  return editing
+    ? `<div class="form-grid">${fields.map(([name, label]) => profileEditField(name, label, profile.correspondence[name], true, ["preferredContact", "notes"].includes(name))).join("")}</div>`
+    : infoGrid(fields.map(([name, label]) => [label, profile.correspondence[name]]));
+}
+
+function renderStartupCard() {
+  const profile = currentStartupProfile();
+  const activeTab = startupProfileTabs.find((tab) => tab.id === state.startupProfileTab) || startupProfileTabs[0];
+  app.innerHTML = `
+    <section class="startup-profile">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Profil startupu</p>
+          <h1>Karta startupu</h1>
+          <p>Najwazniejsze informacje o firmie, projekcie, osobach kontaktowych i danych korespondencyjnych.</p>
+        </div>
+        <button class="button ${state.startupProfileEditing ? "secondary" : ""}" type="button" data-edit-startup-profile>
+          ${state.startupProfileEditing ? "Zakoncz edycje" : "Edytuj dane"}
+        </button>
+      </div>
+
+      <section class="startup-summary-card">
+        <div>
+          <p class="eyebrow">Metryczka startupu</p>
+          <h2>${escapeHtml(profile.summary.companyName)}</h2>
+          <p>Projekt: ${escapeHtml(profile.summary.projectName)}</p>
+        </div>
+        <div class="summary-facts">
+          <article><span>Akronim</span><strong>${escapeHtml(profile.summary.acronym)}</strong></article>
+          <article><span>Status</span><strong>${escapeHtml(profile.summary.programStatus)}</strong></article>
+          <article><span>Program</span><strong>${escapeHtml(profile.summary.program)}</strong></article>
+          <article><span>Opiekun projektu</span><strong>${escapeHtml(profile.summary.supervisor)}</strong></article>
+        </div>
+      </section>
+
+      <div class="profile-tabs" role="tablist" aria-label="Sekcje profilu startupu">
+        ${startupProfileTabs.map((tab) => `
+          <button class="${tab.id === state.startupProfileTab ? "is-active" : ""}" type="button" role="tab" data-startup-profile-tab="${tab.id}">
+            ${escapeHtml(tab.label)}
+          </button>
+        `).join("")}
+      </div>
+
+      <form class="startup-profile-panel" id="startup-profile-form">
+        <div class="profile-panel-head">
+          <div>
+            <p class="eyebrow">${escapeHtml(activeTab.label)}</p>
+            <h2>${escapeHtml(activeTab.label)}</h2>
+          </div>
+          ${state.startupProfileEditing ? `<button class="button" type="submit">Zapisz zmiany</button>` : ""}
+        </div>
+        ${renderStartupProfileContent(profile)}
+      </form>
+    </section>
   `;
 }
 
@@ -397,14 +1611,14 @@ function renderExpenses() {
 
   app.innerHTML = `
     ${pageHead(
-      "Wydatki",
+      "Grant i wydatki",
       isAdmin()
-        ? "ADMIN moze dodawac wydatki w imieniu beneficjenta i zmieniac statusy."
-        : "Beneficjent widzi i dodaje tylko swoje wydatki.",
+        ? "ADMIN moze dodawac wydatki w imieniu beneficjenta i zmieniac statusy. Modul bedzie rozwijany o rozliczanie grantu i Harmonogram Grantu."
+        : "Beneficjent widzi i dodaje tylko swoje wydatki. Modul bedzie rozwijany o rozliczanie grantu i Harmonogram Grantu.",
       `<button class="button" data-go="add-expense">Dodaj wydatek</button>`
     )}
     <section class="summary-strip">
-      <article><span>Wydatki</span><strong>${state.data.expenses.length}</strong></article>
+      <article><span>Grant i wydatki</span><strong>${state.data.expenses.length}</strong></article>
       <article><span>Razem netto</span><strong>${money(totalNet)}</strong></article>
       <article><span>Razem brutto</span><strong>${money(totalGross)}</strong></article>
     </section>
@@ -479,7 +1693,7 @@ function renderAddExpense() {
       </div>`;
 
   app.innerHTML = `
-    ${pageHead("Dodaj wydatek", "Dodaj dane faktury, wybierz VAT i dolacz przynajmniej jeden plik.")}
+    ${pageHead("Dodaj wydatek", "Dodaj dane faktury w module Grant i wydatki, wybierz VAT i dolacz przynajmniej jeden plik.")}
     <form class="form-panel" id="expense-form">
       <input type="hidden" name="actorId" value="${state.actorId}" />
       <div class="form-grid">
@@ -558,104 +1772,232 @@ function renderAddExpense() {
   calculateExpenseTotals();
 }
 
-function renderDocuments() {
-  const selected = effectiveBeneficiaryId();
-  const cards = state.data.documents.map((document) => {
-    const beneficiary = getBeneficiary(document.beneficiaryId);
-    const statusControl = isAdmin()
-      ? `<select data-status-document="${document.id}">${documentStatusOptions.map((status) => `<option value="${status}" ${status === document.status ? "selected" : ""}>${statusLabels[status]}</option>`).join("")}</select>`
-      : `<span class="status-pill" data-status="${document.status}">${statusLabels[document.status] || document.status}</span>`;
-    return `
-      <article class="doc-card">
+function workflowDocumentsForTab() {
+  if (state.documentsTab === "archive") {
+    return state.documentWorkflowDocs.filter((document) => document.status === "Archiwalny" || document.documentType === "archive");
+  }
+  return state.documentWorkflowDocs.filter((document) => document.documentType === state.documentsTab && document.status !== "Archiwalny");
+}
+
+function documentStatusTone(status) {
+  if (["Podpisany przez wszystkie wymagane osoby", "Zaakceptowany"].includes(status)) return "success";
+  if (["Do poprawy", "Oczekuje na dodanie poprawnego pliku"].includes(status)) return "danger";
+  if (status === "Archiwalny") return "neutral";
+  return "warning";
+}
+
+function renderSignaturePath(document) {
+  return `
+    <div class="signature-path">
+      ${document.signaturePath.map((step) => `
         <div>
-          <h3>${escapeHtml(document.title)}</h3>
-          <p class="meta">
-            <span>${escapeHtml(beneficiary?.name || "-")}</span>
-            <span>${escapeHtml(document.category)}</span>
-            <span>${formatDate(String(document.createdAt || "").slice(0, 10))}</span>
-          </p>
-          <p>${escapeHtml(document.note || "Brak dodatkowych uwag.")}</p>
-          ${attachmentList(document.attachments || [])}
+          <span>${escapeHtml(step.role)}</span>
+          <strong>${escapeHtml(step.state)}</strong>
         </div>
-        <div class="status-cell">${statusControl}</div>
-      </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderCurrentFile(document) {
+  const file = document.currentFile;
+  if (!file) {
+    return `
+      <div class="current-file empty">
+        <strong>Brak aktualnego pliku PDF</strong>
+        <span>Dodaj zalacznik PDF, aby uruchomic kolejny krok obiegu.</span>
+      </div>
     `;
-  });
+  }
+  return `
+    <div class="current-file">
+      <div>
+        <strong>${escapeHtml(file.name)}</strong>
+        <span>Dodal: ${escapeHtml(file.addedBy)} (${escapeHtml(file.addedByRole)})</span>
+        <span>${formatDateTime(file.addedAt)}</span>
+      </div>
+      <a class="button ghost" href="${file.content || "#"}" ${file.content ? `download="${escapeHtml(file.name)}"` : ""}>Pobierz aktualny plik</a>
+    </div>
+  `;
+}
 
-  const form = state.showDocumentForm
-    ? `
-      <form class="form-panel" id="document-form">
-        <input type="hidden" name="actorId" value="${state.actorId}" />
-        <div class="form-grid">
-          ${
-            isAdmin()
-              ? `<div class="field">
-                  <label for="document-beneficiary">Beneficjent</label>
-                  <select id="document-beneficiary" name="beneficiaryId" required>
-                    <option value="">Wybierz beneficjenta</option>
-                    ${beneficiaryOptions(selected)}
-                  </select>
-                </div>`
-              : `<input type="hidden" name="beneficiaryId" value="${state.actorId}" />
-                <div class="field">
-                  <label>Beneficjent</label>
-                  <input value="${escapeHtml(activeActor()?.name || "")}" disabled />
-                </div>`
-          }
-          <div class="field">
-            <label for="document-title">Nazwa dokumentu</label>
-            <input id="document-title" name="title" required />
-          </div>
-          <div class="field">
-            <label for="document-category">Kategoria</label>
-            <input id="document-category" name="category" placeholder="np. Harmonogram, Umowa, Monitoring" required />
-          </div>
-          <div class="field">
-            <label for="document-status">Status</label>
-            <select id="document-status" name="status">
-              ${documentStatusOptions.map((status) => `<option value="${status}">${statusLabels[status]}</option>`).join("")}
-            </select>
-          </div>
-          <div class="field">
-            <label for="document-files">Zalaczniki</label>
-            <input id="document-files" name="files" type="file" multiple />
-          </div>
-          <div class="field is-wide">
-            <label for="document-note">Opis / uwagi</label>
-            <textarea id="document-note" name="note"></textarea>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button class="button" type="submit">Zapisz dokument</button>
-          <button class="button secondary" type="button" data-hide-document-form>Schowaj formularz</button>
-        </div>
-      </form>
-    `
-    : "";
+function renderFileVersions(document) {
+  if (!document.fileVersions.length) return `<p class="muted-copy">Brak poprzednich wersji pliku.</p>`;
+  return `
+    <div class="file-version-list">
+      ${document.fileVersions.map((file) => `
+        <article>
+          <strong>${escapeHtml(file.name)}</strong>
+          <span>${escapeHtml(file.addedBy)} (${escapeHtml(file.addedByRole)})</span>
+          <span>${formatDateTime(file.addedAt)}</span>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
 
+function renderDocumentUpload(document) {
+  if (document.status === "Archiwalny") {
+    return `<p class="muted-copy">Dokument archiwalny jest tylko do podgladu i pobrania.</p>`;
+  }
+  return `
+    <form class="document-upload-box" data-document-upload-form>
+      <input type="hidden" name="documentId" value="${escapeHtml(document.id)}" />
+      <label for="upload-${escapeHtml(document.id)}">Dodaj zalacznik PDF</label>
+      <p>Przeciagnij plik tutaj albo wybierz go z dysku. Akceptowany jest tylko PDF.</p>
+      <input id="upload-${escapeHtml(document.id)}" name="pdfFile" type="file" accept="application/pdf,.pdf" required />
+      <div class="contact-actions">
+        <button class="button secondary" type="submit">${document.currentFile ? "Podmien plik PDF" : "Dodaj plik PDF"}</button>
+        ${document.currentFile ? `<button class="button ghost" type="button" data-remove-document-file="${escapeHtml(document.id)}">Usun aktualny plik</button>` : ""}
+      </div>
+    </form>
+  `;
+}
+
+function renderDocumentActions(document) {
+  if (document.status === "Archiwalny") return "";
+  const adminActions = isAdmin() ? `
+    <button class="button secondary" type="button" data-document-action="verify" data-document-id="${escapeHtml(document.id)}">Zweryfikuj dokument</button>
+    <button class="button secondary" type="button" data-document-action="return" data-document-id="${escapeHtml(document.id)}">Zwroc do poprawy</button>
+    <button class="button secondary" type="button" data-document-action="project-sign" data-document-id="${escapeHtml(document.id)}">Podpisano jako Opiekun Projektu</button>
+    <button class="button secondary" type="button" data-document-action="authorized-sign" data-document-id="${escapeHtml(document.id)}">Dodaj podpis osoby upowaznionej</button>
+    <button class="button ghost" type="button" data-document-action="complete" data-document-id="${escapeHtml(document.id)}">Oznacz jako podpisany przez wszystkie osoby</button>
+    <button class="button ghost" type="button" data-document-action="archive" data-document-id="${escapeHtml(document.id)}">Przenies do archiwum</button>
+    <div class="field emergency-status">
+      <label>Awaryjna zmiana statusu Admina</label>
+      <select data-document-emergency-status="${escapeHtml(document.id)}">
+        ${documentWorkflowStatuses.map((status) => `<option value="${status}" ${document.status === status ? "selected" : ""}>${status}</option>`).join("")}
+      </select>
+    </div>
+  ` : "";
+  return `<div class="document-actions">${adminActions}</div>`;
+}
+
+function renderDocumentComments(document) {
+  return `
+    <div class="document-comments">
+      <div class="comment-list">
+        ${document.comments.map((comment) => `
+          <article>
+            <strong>${escapeHtml(comment.author)} <span>${escapeHtml(comment.role)}</span></strong>
+            <time>${formatDateTime(comment.timestamp)}</time>
+            <p>${escapeHtml(comment.text)}</p>
+          </article>
+        `).join("") || `<p class="muted-copy">Brak komentarzy.</p>`}
+      </div>
+      ${document.status === "Archiwalny" ? "" : `
+        <form class="comment-form" data-document-comment-form>
+          <input type="hidden" name="documentId" value="${escapeHtml(document.id)}" />
+          <div class="field">
+            <label>Dodaj komentarz / uwage</label>
+            <textarea name="comment" class="short-textarea" placeholder="np. Brakuje podpisu osoby uprawnionej do reprezentacji." required></textarea>
+          </div>
+          <button class="button secondary" type="submit">Dodaj komentarz</button>
+        </form>
+      `}
+    </div>
+  `;
+}
+
+function renderDocumentHistory(document) {
+  return `
+    <ol class="document-timeline">
+      ${document.history.slice().reverse().map((entry) => `
+        <li>
+          <div>
+            <strong>${escapeHtml(entry.actionType)}</strong>
+            <time>${formatDateTime(entry.timestamp)} - ${escapeHtml(entry.actorName)} (${escapeHtml(entry.actorRole)})</time>
+          </div>
+          <p>${escapeHtml(entry.comment || "")}</p>
+          <dl>
+            <div><dt>Poprzedni status</dt><dd>${escapeHtml(entry.previousStatus || "-")}</dd></div>
+            <div><dt>Nowy status</dt><dd>${escapeHtml(entry.newStatus || "-")}</dd></div>
+            <div><dt>Plik</dt><dd>${escapeHtml(entry.fileName || "-")}</dd></div>
+            <div><dt>Poprzedni plik</dt><dd>${escapeHtml(entry.previousFileName || "-")}</dd></div>
+            <div><dt>Nowy plik</dt><dd>${escapeHtml(entry.newFileName || "-")}</dd></div>
+          </dl>
+        </li>
+      `).join("") || `<li><p>Brak historii dokumentu.</p></li>`}
+    </ol>
+  `;
+}
+
+function renderDocumentCard(document) {
+  return `
+    <article class="workflow-doc-card">
+      <div class="workflow-doc-head">
+        <div>
+          <p class="eyebrow">${escapeHtml(document.typeLabel)}${document.month ? ` / ${escapeHtml(document.month)}` : ""}</p>
+          <h2>${escapeHtml(document.title)}</h2>
+          ${document.description ? `<p>${escapeHtml(document.description)}</p>` : ""}
+        </div>
+        <span class="status-pill document-status" data-tone="${documentStatusTone(document.status)}">${escapeHtml(document.status)}</span>
+      </div>
+      <div class="current-step">
+        <span>Aktualny krok procesu</span>
+        <strong>${escapeHtml(document.currentStep)}</strong>
+      </div>
+      <details open>
+        <summary>Aktualny plik i zalacznik PDF</summary>
+        ${renderCurrentFile(document)}
+        ${renderDocumentUpload(document)}
+      </details>
+      <details open>
+        <summary>Sciezka podpisu</summary>
+        ${renderSignaturePath(document)}
+      </details>
+      <details>
+        <summary>Poprzednie wersje pliku</summary>
+        ${renderFileVersions(document)}
+      </details>
+      ${renderDocumentActions(document)}
+      <details open>
+        <summary>Komentarze / uwagi</summary>
+        ${renderDocumentComments(document)}
+      </details>
+      <details>
+        <summary>Historia dokumentu</summary>
+        ${renderDocumentHistory(document)}
+      </details>
+    </article>
+  `;
+}
+
+function renderDocuments() {
+  const documents = workflowDocumentsForTab();
+  const currentTab = documentWorkflowTabs.find((tab) => tab.id === state.documentsTab);
+  const awaiting = state.documentWorkflowDocs.filter((document) => document.status.startsWith("Oczekuje")).length;
+  const correction = state.documentWorkflowDocs.filter((document) => document.status === "Do poprawy").length;
+  const complete = state.documentWorkflowDocs.filter((document) => ["Podpisany przez wszystkie wymagane osoby", "Zaakceptowany"].includes(document.status)).length;
+  const archived = state.documentWorkflowDocs.filter((document) => document.status === "Archiwalny").length;
   app.innerHTML = `
-    ${pageHead(
-      "Dokumenty",
-      "Dokumenty sa przypisane do beneficjenta, a pliki sa zapisywane lokalnie w jego folderze.",
-      `<button class="button" data-show-document-form>Dodaj dokument</button>`
-    )}
-    <section class="doc-category-strip">
-      <article>
-        <strong>Umowy i zalaczniki</strong>
-        <span>pliki formalne powiazane z projektem</span>
-      </article>
-      <article>
-        <strong>Monitoring</strong>
-        <span>harmonogramy, notatki i dokumenty kontrolne</span>
-      </article>
-      <article>
-        <strong>Dokumenty beneficjenta</strong>
-        <span>materialy przekazywane do weryfikacji</span>
-      </article>
-    </section>
-    ${form}
-    <section class="doc-list" style="margin-top: 16px;">
-      ${cards.join("") || `<div class="empty-state card">Brak dokumentow w tym zakresie.</div>`}
+    <section class="documents-workflow-page">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">${escapeHtml(currentScopeLabel())}</p>
+          <h1>Dokumenty</h1>
+          <p>Centrum obiegu dokumentow, podpisow, zalacznikow PDF, komentarzy i historii zmian. Status zmienia sie po wykonaniu akcji, a nie przez zwykly wybor z listy.</p>
+        </div>
+      </div>
+      <section class="document-summary-strip">
+        <article><span>Oczekuja na krok</span><strong>${awaiting}</strong></article>
+        <article><span>Do poprawy</span><strong>${correction}</strong></article>
+        <article><span>Zakonczone</span><strong>${complete}</strong></article>
+        <article><span>Archiwum</span><strong>${archived}</strong></article>
+      </section>
+      <div class="profile-tabs document-tabs" role="tablist" aria-label="Typy dokumentow">
+        ${documentWorkflowTabs.map((tab) => `
+          <button class="${state.documentsTab === tab.id ? "is-active" : ""}" type="button" data-documents-tab="${tab.id}">${tab.label}</button>
+        `).join("")}
+      </div>
+      <section class="document-tab-intro">
+        <p class="eyebrow">${escapeHtml(currentTab?.label || "Dokumenty")}</p>
+        <h2>${escapeHtml(currentTab?.label || "Dokumenty")}</h2>
+        <p>Dokumenty sa pogrupowane po typie. Status, aktualny krok i osoba odpowiedzialna za kolejny ruch sa widoczne na karcie dokumentu.</p>
+      </section>
+      <section class="workflow-doc-list">
+        ${documents.map(renderDocumentCard).join("") || `<div class="empty-state card">Brak dokumentow w tej sekcji.</div>`}
+      </section>
     </section>
   `;
 }
@@ -965,6 +2307,809 @@ function renderTutorial() {
   `;
 }
 
+function renderPlaceholderModule(title, description) {
+  app.innerHTML = `
+    ${pageHead(title, description)}
+    <section class="placeholder-module">
+      <div>
+        <p class="eyebrow">Modul</p>
+        <h2>${escapeHtml(title)}</h2>
+        <p>Ten obszar jest przygotowany w nawigacji i czeka na docelowe widoki oraz logike.</p>
+      </div>
+    </section>
+  `;
+}
+
+function mentoringMentors(type = "") {
+  return state.mentoringMentors.filter((mentor) => !type || mentor.type === type);
+}
+
+function mentoringMentor(id = state.mentoringActiveMentorId) {
+  return state.mentoringMentors.find((mentor) => mentor.id === id) || mentoringMentors("lead")[0];
+}
+
+function mentoringEntryCounts(entry) {
+  return entry.status === "zrealizowane" && Number(entry.hours || 0) > 0;
+}
+
+function mentorUsedHours(mentor) {
+  return mentor.entries.filter(mentoringEntryCounts).reduce((sum, entry) => sum + Number(entry.hours || 0), 0);
+}
+
+function mentorPlannedHours(mentor) {
+  return mentor.goals.reduce((sum, goal) => sum + Number(goal.plannedHours || 0), 0);
+}
+
+function goalUsedHours(mentor, goalId) {
+  return mentor.entries
+    .filter((entry) => entry.goalId === goalId && mentoringEntryCounts(entry))
+    .reduce((sum, entry) => sum + Number(entry.hours || 0), 0);
+}
+
+function subjectUsedHours() {
+  return mentoringMentors("subject").reduce((sum, mentor) => sum + mentorUsedHours(mentor), 0);
+}
+
+function subjectPlannedHours() {
+  return mentoringMentors("subject").reduce((sum, mentor) => sum + mentorPlannedHours(mentor), 0);
+}
+
+function mentoringMonthLabel(dateValue) {
+  const date = new Date(`${dateValue}T00:00:00`);
+  const month = new Intl.DateTimeFormat("pl-PL", { month: "long", year: "numeric" }).format(date);
+  return month.charAt(0).toUpperCase() + month.slice(1);
+}
+
+function progressBar(used, limit) {
+  const percent = Math.min(100, Math.round((Number(used || 0) / Number(limit || 1)) * 100));
+  return `<div class="hours-progress" aria-label="Wykorzystanie godzin"><span style="width: ${percent}%"></span></div>`;
+}
+
+function renderMentorCard(mentor, compact = false) {
+  const used = mentorUsedHours(mentor);
+  const remaining = Math.max(0, mentor.limit - used);
+  return `
+    <article class="mentor-card">
+      <div class="mentor-card-head">
+        <div class="contact-avatar" aria-hidden="true">${escapeHtml(initials(mentor.name))}</div>
+        <div>
+          <p class="eyebrow">${escapeHtml(mentor.role)}</p>
+          <h3>${escapeHtml(mentor.name)}</h3>
+          <p>${escapeHtml(mentor.specialization)}</p>
+        </div>
+      </div>
+      <dl class="mentor-facts">
+        <div><dt>E-mail</dt><dd><a href="mailto:${escapeHtml(mentor.email)}">${escapeHtml(mentor.email)}</a></dd></div>
+        <div><dt>Telefon</dt><dd><a href="tel:${escapeHtml(mentor.phone)}">${escapeHtml(mentor.phone)}</a></dd></div>
+        <div><dt>Limit godzin</dt><dd>${mentor.limit} h${mentor.type === "subject" ? " / max na mentora" : ""}</dd></div>
+        <div><dt>Wykorzystano</dt><dd>${used} h</dd></div>
+        <div><dt>Pozostalo</dt><dd>${remaining} h</dd></div>
+      </dl>
+      ${progressBar(used, mentor.limit)}
+      ${compact ? `<button class="button secondary" type="button" data-open-mentor="${escapeHtml(mentor.id)}">Otworz szczegoly mentora</button>` : ""}
+    </article>
+  `;
+}
+
+function renderMentorSections(mentor) {
+  return `
+    <div class="mentor-section-tabs">
+      ${mentorSections.map((section) => `
+        <button class="${state.mentoringSection === section.id ? "is-active" : ""}" type="button" data-mentor-section="${section.id}">
+          ${escapeHtml(section.label)}
+        </button>
+      `).join("")}
+    </div>
+    <section class="mentor-section-panel">
+      ${renderMentorSectionContent(mentor)}
+    </section>
+  `;
+}
+
+function renderGoalForm(mentor) {
+  if (!state.mentoringGoalFormOpen) return "";
+  const editingGoal = mentor.goals.find((goal) => goal.id === state.mentoringEditingGoalId) || {};
+  return `
+    <form class="mentoring-inline-form" id="mentoring-goal-form">
+      <input type="hidden" name="mentorId" value="${escapeHtml(mentor.id)}" />
+      <input type="hidden" name="id" value="${escapeHtml(editingGoal.id || "")}" />
+      <div class="form-grid">
+        ${profileEditField("name", "Nazwa celu", editingGoal.name || "")}
+        ${profileEditField("plannedHours", "Planowana liczba godzin", editingGoal.plannedHours || "")}
+        ${profileEditField("dueDate", "Termin realizacji", editingGoal.dueDate || "")}
+        <div class="field">
+          <label for="profile-status">Status celu</label>
+          <select id="profile-status" name="status">${optionList(mentoringGoalStatuses, editingGoal.status || "planowany")}</select>
+        </div>
+        ${profileEditField("description", "Opis celu", editingGoal.description || "", true, true)}
+        ${profileEditField("result", "Oczekiwany rezultat / produkt", editingGoal.result || "", true)}
+      </div>
+      <div class="form-actions">
+        <button class="button" type="submit">${editingGoal.id ? "Zapisz cel" : "Dodaj cel"}</button>
+        <button class="button secondary" type="button" data-close-goal-form>Anuluj</button>
+      </div>
+    </form>
+  `;
+}
+
+function renderMentorSchedule(mentor) {
+  return `
+    <div class="mentor-panel-head">
+      <div>
+        <p class="eyebrow">Harmonogram Mentoringu</p>
+        <h2>Cele mentora</h2>
+        <p>Zaplanowano ${mentorPlannedHours(mentor)} / ${mentor.limit} h.</p>
+      </div>
+      <button class="button" type="button" data-open-goal-form>Dodaj cel</button>
+    </div>
+    ${renderGoalForm(mentor)}
+    <div class="mentoring-goal-list">
+      ${mentor.goals.map((goal) => {
+        const used = goalUsedHours(mentor, goal.id);
+        const remaining = Math.max(0, Number(goal.plannedHours || 0) - used);
+        return `
+          <article class="mentoring-goal-card">
+            <div>
+              <span class="status-pill">${escapeHtml(goal.status)}</span>
+              <h3>${escapeHtml(goal.name)}</h3>
+              <p>${escapeHtml(goal.description)}</p>
+              <dl class="mentor-facts compact">
+                <div><dt>Plan</dt><dd>${goal.plannedHours} h</dd></div>
+                <div><dt>Zrealizowano</dt><dd>${used} h</dd></div>
+                <div><dt>Pozostalo</dt><dd>${remaining} h</dd></div>
+                <div><dt>Termin</dt><dd>${escapeHtml(goal.dueDate)}</dd></div>
+                <div><dt>Rezultat</dt><dd>${escapeHtml(goal.result)}</dd></div>
+              </dl>
+            </div>
+            <div class="contact-actions">
+              <button class="button secondary" type="button" data-edit-goal="${escapeHtml(goal.id)}">Edytuj</button>
+              <button class="button ghost" type="button" data-delete-goal="${escapeHtml(goal.id)}">Usun</button>
+            </div>
+          </article>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderEntryForm(mentor) {
+  if (!state.mentoringEntryFormOpen) return "";
+  return `
+    <form class="mentoring-inline-form" id="mentoring-entry-form">
+      <input type="hidden" name="mentorId" value="${escapeHtml(mentor.id)}" />
+      <div class="form-grid">
+        ${profileEditField("date", "Data", dateKey(new Date()))}
+        ${profileEditField("startTime", "Godzina rozpoczecia", "10:00")}
+        ${profileEditField("endTime", "Godzina zakonczenia", "12:00")}
+        <div class="field">
+          <label for="profile-goalId">Powiazany cel</label>
+          <select id="profile-goalId" name="goalId">${mentor.goals.map((goal) => `<option value="${goal.id}">${escapeHtml(goal.name)}</option>`).join("")}</select>
+        </div>
+        ${profileEditField("hours", "Liczba zrealizowanych godzin", "2")}
+        <div class="field">
+          <label for="profile-form">Forma realizacji</label>
+          <select id="profile-form" name="form">${optionList(mentoringForms, "spotkanie online")}</select>
+        </div>
+        <div class="field">
+          <label for="profile-status">Status</label>
+          <select id="profile-status" name="status">${optionList(mentoringEntryStatuses, "zrealizowane")}</select>
+        </div>
+        ${profileEditField("meetingLink", "Link do spotkania / materialow", "")}
+        ${profileEditField("supervisorLink", "Link dla opiekuna projektu", "")}
+        ${profileEditField("place", "Miejsce, jesli stacjonarne", "")}
+        ${profileEditField("description", "Agenda / opis realizacji", "", true, true)}
+        ${profileEditField("notes", "Uwagi", "", true)}
+        <label class="check-row">
+          <input type="checkbox" name="includeInReport" value="true" checked />
+          <span>Uwzglednij w sprawozdaniu miesiecznym</span>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="button" type="submit">Zapisz realizacje</button>
+        <button class="button secondary" type="button" data-close-entry-form>Anuluj</button>
+      </div>
+    </form>
+  `;
+}
+
+function renderMentorHours(mentor) {
+  const reportMonths = ["all", ...mentoringMonths.map((month) => month.toLowerCase())];
+  return `
+    <div class="mentor-panel-head">
+      <div>
+        <p class="eyebrow">Realizacja godzin</p>
+        <h2>Spotkania i wpisy godzinowe</h2>
+        <p>Wpisy zrealizowane aktualizuja cele, wykorzystanie mentora i limity.</p>
+      </div>
+      <div class="form-actions no-margin">
+        <button class="button" type="button" data-open-entry-form>Dodaj spotkanie / realizacje</button>
+        <button class="button secondary" type="button" data-export-mentoring-report="${escapeHtml(mentor.id)}">Eksportuj raport godzin do Excela</button>
+      </div>
+    </div>
+    <div class="mentoring-export-tools">
+      <div class="field">
+        <label for="mentoring-export-month">Okres raportu</label>
+        <select id="mentoring-export-month" data-mentoring-export-month>
+          ${reportMonths.map((month) => `<option value="${month}" ${state.mentoringExportMonth === month ? "selected" : ""}>${month === "all" ? "Caly okres akceleracji" : escapeHtml(month)}</option>`).join("")}
+        </select>
+      </div>
+      <p class="context-note">Raport mozna eksportowac dla biezacego mentora, konkretnego mentora albo calej grupy przez przyciski w odpowiednich widokach.</p>
+    </div>
+    ${renderEntryForm(mentor)}
+    <div class="mentoring-entry-list">
+      ${mentor.entries.map((entry) => {
+        const goal = mentor.goals.find((item) => item.id === entry.goalId);
+        return `
+          <article class="mentoring-entry-card">
+            <div>
+              <span class="status-pill">${escapeHtml(entry.status)}</span>
+              <h3>${formatDate(entry.date)} ${escapeHtml(entry.startTime || "")}-${escapeHtml(entry.endTime || "")}</h3>
+              <p>${escapeHtml(entry.description || "Brak opisu.")}</p>
+              <dl class="mentor-facts compact">
+                <div><dt>Cel</dt><dd>${escapeHtml(goal?.name || "-")}</dd></div>
+                <div><dt>Godziny</dt><dd>${entry.hours} h</dd></div>
+                <div><dt>Forma</dt><dd>${escapeHtml(entry.form)}</dd></div>
+                <div><dt>Sprawozdanie</dt><dd>${entry.includeInReport ? "tak" : "nie"}</dd></div>
+              </dl>
+            </div>
+          </article>
+        `;
+      }).join("") || `<div class="empty-state card">Brak wpisow realizacji godzin.</div>`}
+    </div>
+  `;
+}
+
+function monthHours(mentor, month) {
+  return mentor.entries
+    .filter((entry) => mentoringEntryCounts(entry) && mentoringMonthLabel(entry.date).toLowerCase() === month.toLowerCase())
+    .reduce((sum, entry) => sum + Number(entry.hours || 0), 0);
+}
+
+function renderMentorDocuments(mentor) {
+  return `
+    <div class="mentor-panel-head">
+      <div>
+        <p class="eyebrow">Dokumenty mentora</p>
+        <h2>Harmonogram i sprawozdania</h2>
+        <p>Dokumenty sa przypisane do tego konkretnego mentora.</p>
+      </div>
+    </div>
+    <section class="document-strip">
+      <article>
+        <h3>Harmonogram Mentoringu</h3>
+        <p>Status: <strong>${escapeHtml(mentor.documents.schedule.status)}</strong></p>
+        <p>Wersja: ${escapeHtml(mentor.documents.schedule.version)} / data dodania: ${escapeHtml(mentor.documents.schedule.addedAt)}</p>
+        <div class="contact-actions">
+          <button class="button secondary" type="button">Dodaj plik</button>
+          <button class="button secondary" type="button">Wygeneruj z danych aplikacji</button>
+          <button class="button ghost" type="button">Pobierz</button>
+        </div>
+      </article>
+    </section>
+    <div class="monthly-report-list">
+      ${mentor.documents.reports.map((report) => `
+        <article class="monthly-report-card">
+          <div>
+            <span class="status-pill">${escapeHtml(report.status)}</span>
+            <h3>${escapeHtml(report.month)}</h3>
+            <p>Liczba godzin w miesiacu: <strong>${monthHours(mentor, report.month)} h</strong></p>
+          </div>
+          <div class="contact-actions">
+            <button class="button secondary" type="button">Uzupelnij</button>
+            <button class="button secondary" type="button">Wygeneruj sprawozdanie</button>
+            <button class="button ghost" type="button">Dodaj podpisany plik</button>
+          </div>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderMentorSectionContent(mentor) {
+  if (state.mentoringSection === "schedule") return renderMentorSchedule(mentor);
+  if (state.mentoringSection === "hours") return renderMentorHours(mentor);
+  if (state.mentoringSection === "documents") return renderMentorDocuments(mentor);
+  return `
+    <div class="mentor-detail-grid">
+      ${renderMentorCard(mentor)}
+      <section class="card">
+        <h3>Jak pracowac z mentorem</h3>
+        <p>Harmonogram, realizacja godzin i dokumenty sa dostepne w sekcjach tego mentora. Na glownej karcie widzisz tylko najwazniejsze dane i wykorzystanie limitu.</p>
+      </section>
+    </div>
+  `;
+}
+
+function renderMentoringSummary() {
+  const lead = mentoringMentors("lead")[0];
+  const leadUsed = mentorUsedHours(lead);
+  const subjectUsed = subjectUsedHours();
+  const nextEntry = state.mentoringMentors.flatMap((mentor) => mentor.entries.map((entry) => ({ ...entry, mentor }))).sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))[0];
+  return `
+    <section class="mentoring-summary">
+      <article><span>Mentor prowadzacy</span><strong>${leadUsed} / 65 h</strong></article>
+      <article><span>Mentorzy merytoryczni</span><strong>${subjectUsed} / 60 h</strong></article>
+      <article><span>Najblizsze spotkanie</span><strong>${nextEntry ? `${formatDate(nextEntry.date)}, godz. ${nextEntry.startTime}` : "-"}</strong></article>
+      <article><span>Status HM</span><strong>${escapeHtml(lead.documents.schedule.status)}</strong></article>
+      <article><span>Sprawozdanie za maj 2026</span><strong>do uzupelnienia</strong></article>
+    </section>
+  `;
+}
+
+function renderLeadMentorTab() {
+  const mentor = mentoringMentors("lead")[0];
+  state.mentoringActiveMentorId = mentor.id;
+  return `
+    <section class="mentor-workspace">
+      ${renderMentorCard(mentor)}
+      ${renderMentorSections(mentor)}
+    </section>
+  `;
+}
+
+function renderSubjectMentorsTab() {
+  const mentors = mentoringMentors("subject");
+  const active = mentoringMentor();
+  const totalUsed = subjectUsedHours();
+  const totalPlanned = subjectPlannedHours();
+  const showDetail = active?.type === "subject";
+  return `
+    <section class="subject-summary">
+      <article><span>Laczny limit</span><strong>60 h</strong></article>
+      <article><span>Wykorzystano</span><strong>${totalUsed} h</strong></article>
+      <article><span>Pozostalo</span><strong>${Math.max(0, 60 - totalUsed)} h</strong></article>
+      <article><span>Liczba mentorow</span><strong>${mentors.length}</strong></article>
+      <article><span>Zaplanowano</span><strong>${totalPlanned} / 60 h</strong></article>
+    </section>
+    ${showDetail ? `
+      <button class="button ghost" type="button" data-close-mentor-detail>Wroc do listy mentorow</button>
+      <section class="mentor-workspace">
+        ${renderMentorCard(active)}
+        ${renderMentorSections(active)}
+      </section>
+    ` : `
+      <div class="mentor-card-grid">
+        ${mentors.map((mentor) => renderMentorCard(mentor, true)).join("")}
+      </div>
+      <button class="button secondary" type="button" data-export-mentoring-report="all-subject">Eksportuj raport wszystkich mentorow merytorycznych</button>
+    `}
+  `;
+}
+
+function renderMentoring() {
+  app.innerHTML = `
+    <section class="mentoring-page">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Mentoring</p>
+          <h1>Mentoring</h1>
+          <p>Zarzadzaj mentorami, harmonogramami, realizacja godzin, spotkaniami i dokumentami przypisanymi do konkretnych mentorow.</p>
+        </div>
+      </div>
+      ${renderMentoringSummary()}
+      <div class="profile-tabs mentoring-main-tabs" role="tablist" aria-label="Mentoring">
+        <button class="${state.mentoringMainTab === "lead" ? "is-active" : ""}" type="button" data-mentoring-main-tab="lead">Mentor prowadzacy</button>
+        <button class="${state.mentoringMainTab === "subject" ? "is-active" : ""}" type="button" data-mentoring-main-tab="subject">Mentorzy merytoryczni</button>
+      </div>
+      ${state.mentoringMainTab === "lead" ? renderLeadMentorTab() : renderSubjectMentorsTab()}
+    </section>
+  `;
+}
+
+function marketingPackageStats() {
+  const added = state.marketingPackageItems.filter((item) => item.status !== "brak").length;
+  const accepted = state.marketingPackageItems.filter((item) => item.status === "zaakceptowano").length;
+  const total = state.marketingPackageItems.length;
+  const status = accepted === total
+    ? "zaakceptowana"
+    : added === total
+      ? "w weryfikacji"
+      : "do uzupelnienia";
+  return { added, accepted, total, status };
+}
+
+function renderMarketingSummary() {
+  const packageStats = marketingPackageStats();
+  const activeContests = state.marketingContests.filter((contest) => contest.status !== "archiwalny").length;
+  return `
+    <section class="marketing-hero">
+      <div>
+        <p class="eyebrow">Marketing</p>
+        <h1>Marketing startupu w programie</h1>
+        <p>W tym miejscu znajdziesz materialy potrzebne do komunikacji i promocji startupu w ramach programu Akces NCBR.</p>
+      </div>
+      <div class="marketing-status-card">
+        <span class="status-pill">${packageStats.status}</span>
+        <strong>Paczka marketingowa: ${packageStats.added}/${packageStats.total} materialow dodanych</strong>
+        ${progressBar(packageStats.added, packageStats.total)}
+      </div>
+    </section>
+    <section class="marketing-summary">
+      <article><span>Status paczki</span><strong>${packageStats.status}</strong></article>
+      <article><span>Ostatnia aktualizacja</span><strong>26.05.2026</strong></article>
+      <article><span>Materialy od Akces</span><strong>${defaultAkcesMarketingMaterials.length}</strong></article>
+      <article><span>Publikacje</span><strong>${defaultMarketingPublications.length}</strong></article>
+      <article><span>Aktywne konkursy</span><strong>${activeContests}</strong></article>
+    </section>
+  `;
+}
+
+function renderMarketingPackage() {
+  const stats = marketingPackageStats();
+  return `
+    <section class="marketing-panel">
+      <div class="mentor-panel-head">
+        <div>
+          <p class="eyebrow">Paczka marketingowa</p>
+          <h2>${stats.added}/${stats.total} materialow dodanych</h2>
+          <p>Uzupelnij pliki, linki i opisy, ktore Akces NCBR moze wykorzystac do promocji startupu.</p>
+        </div>
+        <div class="marketing-progress-box">
+          ${progressBar(stats.added, stats.total)}
+          <span>${Math.round((stats.added / stats.total) * 100)}% kompletnosci</span>
+        </div>
+      </div>
+      <div class="marketing-package-grid">
+        ${state.marketingPackageItems.map((item) => `
+          <form class="marketing-package-card" data-marketing-package-form>
+            <input type="hidden" name="id" value="${escapeHtml(item.id)}" />
+            <div class="marketing-card-head">
+              <div>
+                <span class="status-pill">${escapeHtml(item.status)}</span>
+                <h3>${escapeHtml(item.title)}</h3>
+              </div>
+              <button class="button ghost" type="button" data-remove-marketing-package="${escapeHtml(item.id)}">Usun</button>
+            </div>
+            <div class="field">
+              <label>Status</label>
+              <select name="status">
+                ${marketingPackageStatuses.map((status) => `<option value="${status}" ${item.status === status ? "selected" : ""}>${status}</option>`).join("")}
+              </select>
+            </div>
+            <div class="field">
+              <label>Plik</label>
+              <input type="file" name="file" />
+            </div>
+            <div class="field">
+              <label>Link</label>
+              <input name="link" value="${escapeHtml(item.link)}" placeholder="https://" />
+            </div>
+            <div class="field">
+              <label>Opis / tresc</label>
+              <textarea name="text" class="short-textarea">${escapeHtml(item.text)}</textarea>
+            </div>
+            <div class="marketing-preview">
+              <strong>Podglad materialu</strong>
+              ${item.fileData ? `<a href="${escapeHtml(item.fileData)}" download="${escapeHtml(item.fileName || item.title)}">Pobierz dodany plik: ${escapeHtml(item.fileName)}</a>` : item.fileName ? `<span>Plik: ${escapeHtml(item.fileName)}</span>` : "<span>Brak pliku</span>"}
+              ${item.link ? `<a href="${escapeHtml(item.link)}" target="_blank" rel="noopener">Otworz link</a>` : ""}
+              ${item.text ? `<p>${escapeHtml(item.text)}</p>` : ""}
+            </div>
+            <button class="button secondary" type="submit">Zapisz material</button>
+          </form>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function marketingProfileFields() {
+  return [
+    ["activity", "Czym zajmuje sie startup"],
+    ["problem", "Jaki problem rozwiazuje"],
+    ["solution", "Jakie rozwiazanie rozwija"],
+    ["audience", "Dla kogo jest produkt/usluga"],
+    ["distinction", "Co wyroznia startup"],
+    ["achievements", "Najwazniejsze osiagniecia"],
+    ["tags", "Branza / tagi"],
+    ["impact", "Obszar wplywu spolecznego lub srodowiskowego"],
+    ["shortPublication", "Krotki opis do publikacji"],
+    ["longPublication", "Dluzszy opis do publikacji"],
+    ["founderQuote", "Cytat foundera lub reprezentanta"],
+    ["presentationPreference", "Preferowany sposob przedstawiania startupu"]
+  ];
+}
+
+function renderMarketingProfile() {
+  const fields = marketingProfileFields();
+  if (state.marketingProfileEditing) {
+    return `
+      <form class="marketing-panel" id="marketing-profile-form">
+        <div class="mentor-panel-head">
+          <div>
+            <p class="eyebrow">Profil promocyjny</p>
+            <h2>Edycja tresci promocyjnych</h2>
+          </div>
+          <button class="button ghost" type="button" data-cancel-marketing-profile>Przerwij edycje</button>
+        </div>
+        <div class="marketing-profile-grid">
+          ${fields.map(([key, label]) => `
+            <div class="field ${["longPublication", "presentationPreference"].includes(key) ? "is-wide" : ""}">
+              <label>${label}</label>
+              <textarea name="${key}">${escapeHtml(state.marketingProfile[key])}</textarea>
+            </div>
+          `).join("")}
+        </div>
+        <div class="form-actions">
+          <button class="button" type="submit">Zapisz profil promocyjny</button>
+        </div>
+      </form>
+    `;
+  }
+  return `
+    <section class="marketing-panel">
+      <div class="mentor-panel-head">
+        <div>
+          <p class="eyebrow">Profil promocyjny</p>
+          <h2>Tresci do komunikacji zewnetrznej</h2>
+          <p>Profil jest podzielony na krotkie karty, zeby latwo wykorzystac go w publikacjach i materialach Akces.</p>
+        </div>
+        <button class="button secondary" type="button" data-edit-marketing-profile>Edytuj profil promocyjny</button>
+      </div>
+      <div class="marketing-profile-grid">
+        ${fields.map(([key, label]) => `
+          <article class="marketing-info-card ${["longPublication", "presentationPreference"].includes(key) ? "is-wide" : ""}">
+            <h3>${label}</h3>
+            <p>${escapeHtml(state.marketingProfile[key])}</p>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderAkcesMaterials() {
+  const filtered = defaultAkcesMarketingMaterials.filter((material) => state.marketingMaterialFilter === "all" || material.type === state.marketingMaterialFilter);
+  return `
+    <section class="marketing-panel">
+      <div class="mentor-panel-head">
+        <div>
+          <p class="eyebrow">Materialy od Akces</p>
+          <h2>Webinary, prezentacje i instrukcje</h2>
+          <p>Materialy przygotowane przez Akces do wykorzystania przez Beneficjenta.</p>
+        </div>
+        <div class="field compact-field">
+          <label>Typ materialu</label>
+          <select data-marketing-material-filter>
+            <option value="all">Wszystkie</option>
+            ${marketingMaterialTypes.map((type) => `<option value="${type}" ${state.marketingMaterialFilter === type ? "selected" : ""}>${type}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+      <div class="marketing-card-grid">
+        ${filtered.map((material) => `
+          <article class="marketing-info-card">
+            <span class="status-pill">${escapeHtml(material.type)}</span>
+            <h3>${escapeHtml(material.title)}</h3>
+            <p>${escapeHtml(material.description)}</p>
+            <p>Dodano: ${formatDate(material.addedAt)}</p>
+            <div class="contact-actions">
+              <a class="button secondary" href="${escapeHtml(material.url)}" target="_blank" rel="noopener">${material.type === "Grafiki" ? "Pobierz" : "Otworz"}</a>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderMarketingPublications() {
+  return `
+    <section class="marketing-panel">
+      <div class="mentor-panel-head">
+        <div>
+          <p class="eyebrow">Publikacje</p>
+          <h2>Materialy promocyjne startupu</h2>
+          <p>Lista publikacji i planowanych materialow, bez rozbudowanego kalendarza marketingowego.</p>
+        </div>
+      </div>
+      <div class="marketing-card-grid">
+        ${defaultMarketingPublications.map((publication) => `
+          <article class="marketing-info-card">
+            <span class="status-pill">${escapeHtml(publication.status)}</span>
+            <h3>${escapeHtml(publication.title)}</h3>
+            <p>${escapeHtml(publication.description)}</p>
+            <dl class="marketing-dl">
+              <div><dt>Typ</dt><dd>${escapeHtml(publication.type)}</dd></div>
+              <div><dt>Planowana data</dt><dd>${formatDate(publication.plannedAt)}</dd></div>
+              <div><dt>Material</dt><dd>${escapeHtml(publication.fileName || "brak pliku do akceptacji")}</dd></div>
+            </dl>
+            <div class="contact-actions">
+              <button class="button secondary" type="button">Zobacz szczegoly</button>
+              ${publication.url ? `<a class="button ghost" href="${escapeHtml(publication.url)}" target="_blank" rel="noopener">Otworz publikacje</a>` : ""}
+              ${publication.fileName ? `<button class="button ghost" type="button">Pobierz material</button>` : ""}
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function filteredMarketingContests() {
+  return state.marketingContests
+    .filter((contest) => state.marketingContestStatusFilter === "all" || contest.status === state.marketingContestStatusFilter)
+    .filter((contest) => state.marketingContestTypeFilter === "all" || contest.type === state.marketingContestTypeFilter)
+    .sort((a, b) => (a.deadline || "9999-12-31").localeCompare(b.deadline || "9999-12-31"));
+}
+
+function renderMarketingContestForm() {
+  if (!state.marketingContestFormOpen) return "";
+  const contest = state.marketingContests.find((item) => item.id === state.marketingEditingContestId) || {
+    id: "",
+    name: "",
+    organizer: "",
+    type: "konkurs",
+    description: "",
+    audience: "",
+    deadline: "",
+    status: "nowy",
+    url: "",
+    requiredMaterials: "",
+    owner: "",
+    notes: "",
+    fileName: "",
+    fileData: ""
+  };
+  return `
+    <form class="marketing-contest-form" id="marketing-contest-form">
+      <input type="hidden" name="id" value="${escapeHtml(contest.id)}" />
+      <div class="mentor-panel-head">
+        <div>
+          <p class="eyebrow">Konkurs</p>
+          <h2>${contest.id ? "Edycja konkursu" : "Dodaj konkurs"}</h2>
+        </div>
+        <button class="button ghost" type="button" data-close-marketing-contest-form>Przerwij</button>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Nazwa konkursu</label>
+          <input name="name" value="${escapeHtml(contest.name)}" required />
+        </div>
+        <div class="field">
+          <label>Organizator</label>
+          <input name="organizer" value="${escapeHtml(contest.organizer)}" required />
+        </div>
+        <div class="field">
+          <label>Typ</label>
+          <select name="type">${marketingContestTypes.map((type) => `<option value="${type}" ${contest.type === type ? "selected" : ""}>${type}</option>`).join("")}</select>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select name="status">${marketingContestStatuses.map((status) => `<option value="${status}" ${contest.status === status ? "selected" : ""}>${status}</option>`).join("")}</select>
+        </div>
+        <div class="field">
+          <label>Termin zgloszen</label>
+          <input type="date" name="deadline" value="${escapeHtml(contest.deadline)}" />
+        </div>
+        <div class="field">
+          <label>Link do strony konkursu</label>
+          <input name="url" value="${escapeHtml(contest.url)}" placeholder="https://" />
+        </div>
+        <div class="field">
+          <label>Dla kogo jest konkurs</label>
+          <input name="audience" value="${escapeHtml(contest.audience)}" />
+        </div>
+        <div class="field">
+          <label>Osoba odpowiedzialna</label>
+          <input name="owner" value="${escapeHtml(contest.owner)}" />
+        </div>
+        <div class="field">
+          <label>Materialy zgloszeniowe</label>
+          <input type="file" name="file" />
+        </div>
+        <div class="field is-wide">
+          <label>Krotki opis</label>
+          <textarea name="description">${escapeHtml(contest.description)}</textarea>
+        </div>
+        <div class="field is-wide">
+          <label>Wymagane materialy</label>
+          <textarea name="requiredMaterials">${escapeHtml(contest.requiredMaterials)}</textarea>
+        </div>
+        <div class="field is-wide">
+          <label>Notatki</label>
+          <textarea name="notes">${escapeHtml(contest.notes)}</textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="button" type="submit">${contest.id ? "Zapisz konkurs" : "Dodaj konkurs"}</button>
+      </div>
+    </form>
+  `;
+}
+
+function renderMarketingContests() {
+  const active = state.marketingContests.filter((contest) => contest.status !== "archiwalny").length;
+  const submitted = state.marketingContests.filter((contest) => contest.status === "zgloszony").length;
+  const archived = state.marketingContests.filter((contest) => contest.status === "archiwalny").length;
+  const nearest = state.marketingContests
+    .filter((contest) => contest.status !== "archiwalny" && contest.deadline)
+    .sort((a, b) => a.deadline.localeCompare(b.deadline))[0];
+  const contests = filteredMarketingContests();
+  return `
+    <section class="marketing-panel">
+      <div class="mentor-panel-head">
+        <div>
+          <p class="eyebrow">Konkursy</p>
+          <h2>Konkursy, nabory i okazje promocyjne</h2>
+          <p>Konkursy sa tylko podzakladka Marketingu, bez osobnej pozycji w glownym menu.</p>
+        </div>
+        <button class="button" type="button" data-open-marketing-contest-form>Dodaj konkurs</button>
+      </div>
+      <section class="marketing-summary compact-summary">
+        <article><span>Aktywne konkursy</span><strong>${active}</strong></article>
+        <article><span>Najblizszy termin</span><strong>${nearest ? formatDate(nearest.deadline) : "-"}</strong></article>
+        <article><span>Zgloszone</span><strong>${submitted}</strong></article>
+        <article><span>Archiwalne</span><strong>${archived}</strong></article>
+      </section>
+      <div class="marketing-filters">
+        <div class="field">
+          <label>Status</label>
+          <select data-marketing-contest-status-filter>
+            <option value="all">Wszystkie</option>
+            ${marketingContestStatuses.map((status) => `<option value="${status}" ${state.marketingContestStatusFilter === status ? "selected" : ""}>${status}</option>`).join("")}
+          </select>
+        </div>
+        <div class="field">
+          <label>Typ</label>
+          <select data-marketing-contest-type-filter>
+            <option value="all">Wszystkie</option>
+            ${marketingContestTypes.map((type) => `<option value="${type}" ${state.marketingContestTypeFilter === type ? "selected" : ""}>${type}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+      ${renderMarketingContestForm()}
+      <div class="marketing-card-grid">
+        ${contests.map((contest) => `
+          <article class="marketing-info-card">
+            <div class="marketing-card-head">
+              <div>
+                <span class="status-pill">${escapeHtml(contest.status)}</span>
+                <h3>${escapeHtml(contest.name)}</h3>
+              </div>
+              <button class="button ghost" type="button" data-edit-marketing-contest="${escapeHtml(contest.id)}">Edytuj</button>
+            </div>
+            <p>${escapeHtml(contest.description)}</p>
+            <dl class="marketing-dl">
+              <div><dt>Organizator</dt><dd>${escapeHtml(contest.organizer)}</dd></div>
+              <div><dt>Typ</dt><dd>${escapeHtml(contest.type)}</dd></div>
+              <div><dt>Dla kogo</dt><dd>${escapeHtml(contest.audience)}</dd></div>
+              <div><dt>Termin</dt><dd>${formatDate(contest.deadline)}</dd></div>
+              <div><dt>Materialy</dt><dd>${escapeHtml(contest.requiredMaterials)}</dd></div>
+              <div><dt>Odpowiedzialny</dt><dd>${escapeHtml(contest.owner)}</dd></div>
+              <div><dt>Plik</dt><dd>${escapeHtml(contest.fileName || "brak")}</dd></div>
+            </dl>
+            <p>${escapeHtml(contest.notes)}</p>
+            <div class="contact-actions">
+              ${contest.url ? `<a class="button secondary" href="${escapeHtml(contest.url)}" target="_blank" rel="noopener">Otworz konkurs</a>` : ""}
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderMarketing() {
+  const views = {
+    package: renderMarketingPackage,
+    profile: renderMarketingProfile,
+    materials: renderAkcesMaterials,
+    publications: renderMarketingPublications,
+    contests: renderMarketingContests
+  };
+  app.innerHTML = `
+    <section class="marketing-page">
+      ${renderMarketingSummary()}
+      <div class="profile-tabs marketing-tabs" role="tablist" aria-label="Marketing">
+        ${marketingTabs.map((tab) => `
+          <button class="${state.marketingTab === tab.id ? "is-active" : ""}" type="button" data-marketing-tab="${tab.id}">${tab.label}</button>
+        `).join("")}
+      </div>
+      ${views[state.marketingTab]()}
+    </section>
+  `;
+}
+
 function renderSettings() {
   const isAdminActive = isAdmin();
   app.innerHTML = `
@@ -980,7 +3125,7 @@ function renderSettings() {
           <button class="button" type="submit" ${isAdminActive ? "" : "disabled"}>Dodaj beneficjenta</button>
         </div>
         <p class="context-note">
-          ${isAdminActive ? "Nowy beneficjent pojawi sie w gornym wyborze zakresu danych." : "Dodawanie beneficjentow jest dostepne po przelaczeniu pola Dzialam jako na ADMIN."}
+          ${isAdminActive ? "Nowy beneficjent pojawi sie w wyborze zakresu danych pod logo AKCES." : "Dodawanie beneficjentow jest dostepne po przelaczeniu pola Dzialam jako na ADMIN w menu pod logo AKCES."}
         </p>
       </form>
       <div class="beneficiary-list">
@@ -1010,7 +3155,9 @@ function renderView() {
     "add-expense": renderAddExpense,
     documents: renderDocuments,
     calendar: renderCalendar,
+    mentoring: renderMentoring,
     reports: renderReports,
+    marketing: renderMarketing,
     tutorial: renderTutorial,
     settings: renderSettings
   };
@@ -1036,6 +3183,469 @@ function filesToPayload(files) {
       });
     })
   );
+}
+
+async function saveContactFromForm(form) {
+  const payload = formDataToObject(form);
+  const uploadedPhoto = await filesToPayload(form.querySelector("#contact-photo-file")?.files);
+  if (uploadedPhoto.length) payload.photoUrl = uploadedPhoto[0].content;
+  const id = payload.id || `kontakt-${Date.now()}`;
+  const contact = {
+    id,
+    name: payload.name,
+    position: payload.position,
+    organization: payload.organization,
+    email: payload.email,
+    phone: payload.phone,
+    category: payload.category,
+    description: payload.description,
+    photoUrl: payload.photoUrl || ""
+  };
+  const existingIndex = state.addressBookContacts.findIndex((item) => item.id === id);
+  if (existingIndex >= 0) {
+    state.addressBookContacts[existingIndex] = contact;
+    showToast("Zapisano kontakt w lokalnej ksiazce teleadresowej.");
+  } else {
+    state.addressBookContacts.push(contact);
+    showToast("Dodano kontakt do lokalnej ksiazki teleadresowej.");
+  }
+  state.addressBookFormOpen = false;
+  state.editingContactId = "";
+  renderStart();
+}
+
+function saveStartupProfileFromForm(form) {
+  const payload = formDataToObject(form);
+  if (state.startupProfileTab === "people") {
+    const people = Array.from(form.querySelectorAll("[data-profile-person]")).map((row) => ({
+      name: row.querySelector('[name="name"]')?.value || "",
+      function: row.querySelector('[name="function"]')?.value || "",
+      projectRole: row.querySelector('[name="projectRole"]')?.value || "",
+      email: row.querySelector('[name="email"]')?.value || "",
+      phone: row.querySelector('[name="phone"]')?.value || "",
+      type: row.querySelector('[name="type"]')?.value || "",
+      representation: row.querySelector('[name="representation"]')?.value || ""
+    }));
+    updateStartupProfile({ people });
+  } else {
+    updateStartupProfile({ [state.startupProfileTab]: payload });
+  }
+  state.startupProfileEditing = false;
+  renderStartupCard();
+  showToast("Zapisano zmiany w lokalnym profilu startupu.");
+}
+
+function validateMentoringPlannedHours(mentor, nextGoals) {
+  const planned = nextGoals.reduce((sum, goal) => sum + Number(goal.plannedHours || 0), 0);
+  if (planned > mentor.limit) {
+    throw new Error(`Suma godzin w harmonogramie mentora nie moze przekroczyc ${mentor.limit} h.`);
+  }
+  if (mentor.type === "subject") {
+    const otherPlanned = mentoringMentors("subject")
+      .filter((item) => item.id !== mentor.id)
+      .reduce((sum, item) => sum + mentorPlannedHours(item), 0);
+    if (otherPlanned + planned > 60) {
+      throw new Error("Suma zaplanowanych godzin mentorow merytorycznych nie moze przekroczyc 60 h.");
+    }
+  }
+}
+
+function saveMentoringGoal(form) {
+  const payload = formDataToObject(form);
+  const mentor = mentoringMentor(payload.mentorId);
+  const goal = {
+    id: payload.id || `goal-${Date.now()}`,
+    name: payload.name,
+    description: payload.description,
+    plannedHours: Number(payload.plannedHours || 0),
+    result: payload.result,
+    dueDate: payload.dueDate,
+    status: payload.status
+  };
+  const existingIndex = mentor.goals.findIndex((item) => item.id === goal.id);
+  const nextGoals = existingIndex >= 0 ? mentor.goals.map((item) => item.id === goal.id ? goal : item) : [...mentor.goals, goal];
+  validateMentoringPlannedHours(mentor, nextGoals);
+  mentor.goals = nextGoals;
+  state.mentoringGoalFormOpen = false;
+  state.mentoringEditingGoalId = "";
+  renderMentoring();
+  showToast(existingIndex >= 0 ? "Zapisano cel mentoringowy." : "Dodano cel mentoringowy.");
+}
+
+function validateMentoringEntry(mentor, entry) {
+  if (entry.status !== "zrealizowane") return;
+  const currentUsed = mentorUsedHours(mentor);
+  const nextUsed = currentUsed + Number(entry.hours || 0);
+  if (nextUsed > mentor.limit) {
+    throw new Error(`Ten wpis przekroczylby limit mentora: ${mentor.limit} h.`);
+  }
+  if (mentor.type === "subject") {
+    const otherUsed = mentoringMentors("subject")
+      .filter((item) => item.id !== mentor.id)
+      .reduce((sum, item) => sum + mentorUsedHours(item), 0);
+    if (otherUsed + nextUsed > 60) {
+      throw new Error("Ten wpis przekroczylby laczny limit 60 h dla mentorow merytorycznych.");
+    }
+  }
+}
+
+function saveMentoringEntry(form) {
+  const payload = formDataToObject(form);
+  const mentor = mentoringMentor(payload.mentorId);
+  const entry = {
+    id: `entry-${Date.now()}`,
+    date: payload.date,
+    startTime: payload.startTime,
+    endTime: payload.endTime,
+    goalId: payload.goalId,
+    hours: Number(payload.hours || 0),
+    form: payload.form,
+    meetingLink: payload.meetingLink,
+    supervisorLink: payload.supervisorLink,
+    place: payload.place,
+    description: payload.description,
+    status: payload.status,
+    includeInReport: payload.includeInReport === "true",
+    notes: payload.notes
+  };
+  validateMentoringEntry(mentor, entry);
+  mentor.entries.push(entry);
+  state.mentoringEntryFormOpen = false;
+  renderMentoring();
+  showToast("Dodano realizacje godzin i zaktualizowano limity mentoringu.");
+}
+
+function mentoringReportRows(scopeId) {
+  const mentors = scopeId === "all-subject"
+    ? mentoringMentors("subject")
+    : scopeId === "all"
+      ? state.mentoringMentors
+      : [mentoringMentor(scopeId)];
+  return mentors.flatMap((mentor) => {
+    let cumulative = 0;
+    return mentor.entries
+      .filter((entry) => {
+        const monthOk = state.mentoringExportMonth === "all" || mentoringMonthLabel(entry.date).toLowerCase() === state.mentoringExportMonth;
+        return monthOk;
+      })
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((entry) => {
+        const goal = mentor.goals.find((item) => item.id === entry.goalId) || {};
+        if (mentoringEntryCounts(entry)) cumulative += Number(entry.hours || 0);
+        const goalUsed = goal.id ? goalUsedHours(mentor, goal.id) : 0;
+        return {
+          "Data": entry.date,
+          "Miesiac": mentoringMonthLabel(entry.date),
+          "Typ mentora": mentor.role,
+          "Imie i nazwisko mentora": mentor.name,
+          "Cel z Harmonogramu Mentoringu": goal.name || "",
+          "Opis celu": goal.description || "",
+          "Planowana liczba godzin dla celu": goal.plannedHours || "",
+          "Zrealizowane godziny w danym wpisie": entry.hours,
+          "Zrealizowane godziny narastajaco": cumulative,
+          "Pozostale godziny": Math.max(0, Number(goal.plannedHours || 0) - goalUsed),
+          "Forma realizacji": entry.form,
+          "Link do spotkania / materialow": entry.meetingLink,
+          "Link dla opiekuna projektu": entry.supervisorLink,
+          "Opis realizacji": entry.description,
+          "Status spotkania": entry.status,
+          "Czy uwzglednic w sprawozdaniu miesiecznym": entry.includeInReport ? "tak" : "nie",
+          "Uwagi": entry.notes
+        };
+      });
+  });
+}
+
+function exportMentoringReport(scopeId) {
+  const rows = mentoringReportRows(scopeId);
+  const columns = [
+    "Data",
+    "Miesiac",
+    "Typ mentora",
+    "Imie i nazwisko mentora",
+    "Cel z Harmonogramu Mentoringu",
+    "Opis celu",
+    "Planowana liczba godzin dla celu",
+    "Zrealizowane godziny w danym wpisie",
+    "Zrealizowane godziny narastajaco",
+    "Pozostale godziny",
+    "Forma realizacji",
+    "Link do spotkania / materialow",
+    "Link dla opiekuna projektu",
+    "Opis realizacji",
+    "Status spotkania",
+    "Czy uwzglednic w sprawozdaniu miesiecznym",
+    "Uwagi"
+  ];
+  const html = `
+    <html><head><meta charset="UTF-8" /></head><body>
+      <table>
+        <thead><tr>${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${rows.map((row) => `<tr>${columns.map((column) => `<td>${escapeHtml(row[column] ?? "")}</td>`).join("")}</tr>`).join("")}
+        </tbody>
+      </table>
+    </body></html>
+  `;
+  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `raport-godzin-mentoring-${scopeId}-${state.mentoringExportMonth}.xls`;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+  showToast("Wygenerowano raport godzin do Excela.");
+}
+
+async function saveMarketingPackageItem(form) {
+  const payload = formDataToObject(form);
+  const item = state.marketingPackageItems.find((entry) => entry.id === payload.id);
+  if (!item) return;
+  const uploaded = await filesToPayload(form.querySelector('input[name="file"]')?.files);
+  item.status = payload.status;
+  item.link = payload.link || "";
+  item.text = payload.text || "";
+  if (uploaded.length) {
+    const fileInput = form.querySelector('input[name="file"]');
+    item.fileName = fileInput?.files?.[0]?.name || "material";
+    item.fileData = uploaded[0].content;
+  }
+  renderMarketing();
+  showToast("Zapisano element paczki marketingowej.");
+}
+
+function saveMarketingProfile(form) {
+  state.marketingProfile = {
+    ...state.marketingProfile,
+    ...formDataToObject(form)
+  };
+  state.marketingProfileEditing = false;
+  renderMarketing();
+  showToast("Zapisano profil promocyjny.");
+}
+
+async function saveMarketingContest(form) {
+  const payload = formDataToObject(form);
+  const uploaded = await filesToPayload(form.querySelector('input[name="file"]')?.files);
+  const existing = state.marketingContests.find((contest) => contest.id === payload.id);
+  const nextContest = {
+    id: payload.id || `contest-${Date.now()}`,
+    name: payload.name,
+    organizer: payload.organizer,
+    type: payload.type,
+    description: payload.description,
+    audience: payload.audience,
+    deadline: payload.deadline,
+    status: payload.status,
+    url: payload.url,
+    requiredMaterials: payload.requiredMaterials,
+    owner: payload.owner,
+    notes: payload.notes,
+    fileName: uploaded.length ? form.querySelector('input[name="file"]')?.files?.[0]?.name || "material" : existing?.fileName || "",
+    fileData: uploaded.length ? uploaded[0].content : existing?.fileData || ""
+  };
+  if (existing) {
+    state.marketingContests = state.marketingContests.map((contest) => contest.id === existing.id ? nextContest : contest);
+    showToast("Zapisano konkurs.");
+  } else {
+    state.marketingContests.push(nextContest);
+    showToast("Dodano konkurs.");
+  }
+  state.marketingContestFormOpen = false;
+  state.marketingEditingContestId = "";
+  renderMarketing();
+}
+
+function documentActor(action = "") {
+  if (action === "authorized-sign") return { name: "Osoba upowazniona Akces", role: "Osoba upowazniona" };
+  if (action === "project-sign" || action === "verify" || action === "return") return { name: "Julia Bareja", role: "Opiekun Projektu" };
+  if (isAdmin()) return { name: "Admin", role: "Admin" };
+  return { name: activeActor()?.name || "Jan Nowak", role: "Beneficjent" };
+}
+
+function workflowDocument(id) {
+  return state.documentWorkflowDocs.find((document) => document.id === id);
+}
+
+function updateSignaturePath(document, roleMatch, nextState) {
+  document.signaturePath = document.signaturePath.map((step) =>
+    step.role.toLowerCase().includes(roleMatch.toLowerCase()) ? { ...step, state: nextState } : step
+  );
+}
+
+function nextStatusAfterUpload(document) {
+  if (document.status === "Oczekuje na podpis osoby upowaznionej") return "Podpisany przez wszystkie wymagane osoby";
+  if (document.status === "Oczekuje na podpis Opiekuna Projektu") return "Oczekuje na podpis osoby upowaznionej";
+  if (document.documentType === "contract") return "Oczekuje na weryfikacje Akces";
+  if (document.documentType === "wst") return "Oczekuje na podpis Opiekuna Projektu";
+  if (["formal", "other", "archive"].includes(document.documentType)) return "Oczekuje na weryfikacje Akces";
+  return "Oczekuje na weryfikacje Akces";
+}
+
+function updateDocumentStep(document) {
+  const steps = {
+    "Oczekuje na dodanie pliku": "Beneficjent dodaje aktualny zalacznik PDF.",
+    "Oczekuje na dodanie umowy przez Beneficjenta": "Beneficjent dodaje podpisana umowe akceleracyjna jako PDF.",
+    "Oczekuje na dodanie podpisanego WST przez Beneficjenta": "Beneficjent dodaje podpisany WST jako PDF.",
+    "Oczekuje na dodanie poprawnego pliku": "Beneficjent podmienia dokument na poprawna wersje PDF.",
+    "Oczekuje na podpis Beneficjenta": "Beneficjent podpisuje dokument i dodaje plik PDF.",
+    "Oczekuje na weryfikacje Akces": "Akces / Opiekun Projektu weryfikuje aktualny plik.",
+    "Do poprawy": "Beneficjent poprawia dokument zgodnie z uwagami.",
+    "Oczekuje na podpis Opiekuna Projektu": "Opiekun Projektu podpisuje / akceptuje dokument.",
+    "Oczekuje na podpis osoby upowaznionej": "Osoba upowazniona po stronie Akces podpisuje dokument.",
+    "Podpisany przez wszystkie wymagane osoby": "Dokument ma komplet wymaganych podpisow.",
+    "Zaakceptowany": "Dokument zaakceptowany, nie wymaga dzialania.",
+    "Archiwalny": "Dokument archiwalny tylko do podgladu i pobrania."
+  };
+  document.currentStep = steps[document.status] || document.currentStep;
+}
+
+function addDocumentHistory(document, actionType, actor, previousStatus, newStatus, comment, fileName = "", previousFileName = "", newFileName = "") {
+  const timestamp = new Date().toISOString();
+  document.history.push({
+    id: `hist-${document.id}-${Date.now()}`,
+    documentId: document.id,
+    timestamp,
+    actorName: actor.name,
+    actorRole: actor.role,
+    actionType,
+    fileName,
+    previousFileName,
+    newFileName,
+    previousStatus,
+    newStatus,
+    comment
+  });
+  document.updatedAt = timestamp;
+}
+
+async function saveDocumentPdf(form) {
+  const payload = formDataToObject(form);
+  const document = workflowDocument(payload.documentId);
+  const input = form.querySelector('input[name="pdfFile"]');
+  const file = input?.files?.[0];
+  if (!document || !file) return;
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+  if (!isPdf) {
+    showToast("Dodaj plik w formacie PDF. Inne formaty nie zostaly zapisane.");
+    return;
+  }
+  const [uploaded] = await filesToPayload([file]);
+  const actor = documentActor();
+  const previousStatus = document.status;
+  const previousFileName = document.currentFile?.name || "";
+  if (document.currentFile) document.fileVersions.unshift({ ...document.currentFile });
+  document.currentFile = {
+    id: `file-${Date.now()}`,
+    name: file.name,
+    type: file.type || "application/pdf",
+    addedBy: actor.name,
+    addedByRole: actor.role,
+    addedAt: new Date().toISOString(),
+    content: uploaded.content
+  };
+  document.status = nextStatusAfterUpload(document);
+  updateDocumentStep(document);
+  if (document.documentType === "contract") updateSignaturePath(document, "Beneficjent", "podpisano");
+  if (document.documentType === "wst") updateSignaturePath(document, "Beneficjent", "podpisano");
+  if (document.status === "Oczekuje na podpis osoby upowaznionej") updateSignaturePath(document, "Opiekun", "podpisano");
+  if (document.status === "Podpisany przez wszystkie wymagane osoby") updateSignaturePath(document, "upowazniona", "podpisano");
+  addDocumentHistory(
+    document,
+    previousFileName ? "Podmieniono plik PDF" : "Dodano plik PDF",
+    actor,
+    previousStatus,
+    document.status,
+    previousFileName ? "Podmieniono aktualny zalacznik PDF." : "Dodano aktualny zalacznik PDF.",
+    file.name,
+    previousFileName,
+    file.name
+  );
+  renderDocuments();
+  showToast(previousFileName ? "Podmieniono plik PDF i zapisano historie." : "Dodano plik PDF i zmieniono status dokumentu.");
+}
+
+function removeDocumentFile(documentId) {
+  const document = workflowDocument(documentId);
+  if (!document?.currentFile) return;
+  const actor = documentActor("return");
+  const previousStatus = document.status;
+  const previousFile = document.currentFile;
+  document.fileVersions.unshift({ ...previousFile });
+  document.currentFile = null;
+  document.status = "Oczekuje na dodanie poprawnego pliku";
+  updateDocumentStep(document);
+  addDocumentHistory(
+    document,
+    "Usunieto aktualny plik",
+    actor,
+    previousStatus,
+    document.status,
+    "Usunieto aktualny plik. Historia i poprzednia wersja zostaly zachowane.",
+    previousFile.name,
+    previousFile.name,
+    ""
+  );
+  renderDocuments();
+  showToast("Usunieto aktualny plik i zachowano wpis w historii.");
+}
+
+function applyDocumentAction(documentId, action) {
+  const document = workflowDocument(documentId);
+  if (!document) return;
+  const actor = documentActor(action);
+  const previousStatus = document.status;
+  const verifyTarget = ["formal", "other"].includes(document.documentType) ? "Zaakceptowany" : "Oczekuje na podpis osoby upowaznionej";
+  const actions = {
+    verify: [verifyTarget, verifyTarget === "Zaakceptowany" ? "Zaakceptowano dokument" : "Zweryfikowano dokument", verifyTarget === "Zaakceptowany" ? "Plik zweryfikowany i zaakceptowany." : "Plik zweryfikowany i przekazany do kolejnego podpisu."],
+    return: ["Do poprawy", "Zwrocono do poprawy", "Dokument wymaga poprawy przed dalszym obiegiem."],
+    "project-sign": ["Oczekuje na podpis osoby upowaznionej", "Podpisano jako Opiekun Projektu", "Opiekun Projektu podpisal / zaakceptowal dokument."],
+    "authorized-sign": ["Podpisany przez wszystkie wymagane osoby", "Dodano podpis osoby upowaznionej", "Osoba upowazniona podpisala dokument."],
+    complete: ["Podpisany przez wszystkie wymagane osoby", "Oznaczono komplet podpisow", "Dokument podpisany przez wszystkie wymagane osoby."],
+    archive: ["Archiwalny", "Przeniesiono do archiwum", "Dokument przeniesiono do archiwum."]
+  };
+  const [newStatus, actionType, comment] = actions[action] || [];
+  if (!newStatus) return;
+  document.status = newStatus;
+  updateDocumentStep(document);
+  if (action === "verify") updateSignaturePath(document, "Akces", "zweryfikowano");
+  if (action === "project-sign") updateSignaturePath(document, "Opiekun", "podpisano");
+  if (action === "authorized-sign" || action === "complete") updateSignaturePath(document, "upowazniona", "podpisano");
+  addDocumentHistory(document, actionType, actor, previousStatus, document.status, comment, document.currentFile?.name || "");
+  renderDocuments();
+  showToast("Wykonano akcje i zaktualizowano historie dokumentu.");
+}
+
+function saveDocumentComment(form) {
+  const payload = formDataToObject(form);
+  const document = workflowDocument(payload.documentId);
+  if (!document) return;
+  const actor = documentActor();
+  const timestamp = new Date().toISOString();
+  document.comments.push({
+    id: `comment-${Date.now()}`,
+    author: actor.name,
+    role: actor.role,
+    timestamp,
+    text: payload.comment
+  });
+  addDocumentHistory(document, "Dodano komentarz", actor, document.status, document.status, payload.comment, document.currentFile?.name || "");
+  renderDocuments();
+  showToast("Dodano komentarz i wpis w historii dokumentu.");
+}
+
+function emergencyChangeDocumentStatus(documentId, nextStatus) {
+  const document = workflowDocument(documentId);
+  if (!document) return;
+  const actor = documentActor();
+  const previousStatus = document.status;
+  document.status = nextStatus;
+  updateDocumentStep(document);
+  addDocumentHistory(document, "Awaryjna zmiana statusu", actor, previousStatus, nextStatus, "Admin zmienil status awaryjnie.", document.currentFile?.name || "");
+  renderDocuments();
+  showToast("Admin awaryjnie zmienil status dokumentu.");
 }
 
 function formCheckboxValues(form, name) {
@@ -1096,10 +3706,6 @@ async function persistCalendarMove(info) {
   }
 }
 
-document.querySelectorAll(".nav-button").forEach((button) => {
-  button.addEventListener("click", () => setView(button.dataset.view));
-});
-
 actorSelect.addEventListener("change", async () => {
   state.actorId = actorSelect.value;
   state.scopeBeneficiaryId = state.actorId === "admin" ? "all" : state.actorId;
@@ -1114,6 +3720,328 @@ scopeSelect.addEventListener("change", async () => {
 });
 
 document.addEventListener("click", async (event) => {
+  const notificationTrigger = event.target.closest("[data-notifications-toggle]");
+  if (notificationTrigger) {
+    state.notificationsOpen = !state.notificationsOpen;
+    renderStart();
+    return;
+  }
+
+  if (state.notificationsOpen && !event.target.closest(".notification-menu")) {
+    state.notificationsOpen = false;
+  }
+
+  const contextTrigger = event.target.closest("[data-context-toggle]");
+  if (contextTrigger) {
+    const isOpen = contextMenu.hidden;
+    contextMenu.hidden = !isOpen;
+    contextTrigger.setAttribute("aria-expanded", String(isOpen));
+    return;
+  }
+
+  if (!event.target.closest(".brand-menu") && !contextMenu.hidden) {
+    contextMenu.hidden = true;
+    contextToggle.setAttribute("aria-expanded", "false");
+  }
+
+  if (event.target.closest("[data-sidebar-collapse]")) {
+    state.sidebarCollapsed = !state.sidebarCollapsed;
+    window.localStorage.setItem("akces-sidebar-collapsed", String(state.sidebarCollapsed));
+    if (state.sidebarCollapsed && !contextMenu.hidden) {
+      contextMenu.hidden = true;
+      contextToggle.setAttribute("aria-expanded", "false");
+    }
+    syncShellState();
+    return;
+  }
+
+  if (event.target.closest("[data-sidebar-mobile-toggle]")) {
+    state.mobileSidebarOpen = true;
+    syncShellState();
+    return;
+  }
+
+  if (event.target.closest("[data-sidebar-overlay]")) {
+    state.mobileSidebarOpen = false;
+    syncShellState();
+    return;
+  }
+
+  const navButton = event.target.closest(".nav-button[data-view]");
+  if (navButton) {
+    state.startupProfileEditing = false;
+    setView(navButton.dataset.view);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+
+  const startupProfileTab = event.target.closest("[data-startup-profile-tab]");
+  if (startupProfileTab) {
+    state.startupProfileTab = startupProfileTab.dataset.startupProfileTab;
+    state.startupProfileEditing = false;
+    renderStartupCard();
+    return;
+  }
+
+  if (event.target.closest("[data-edit-startup-profile]")) {
+    state.startupProfileEditing = !state.startupProfileEditing;
+    renderStartupCard();
+    return;
+  }
+
+  if (event.target.closest("[data-add-profile-person]")) {
+    const profile = currentStartupProfile();
+    updateStartupProfile({
+      people: [
+        ...profile.people,
+        {
+          name: "",
+          function: "",
+          projectRole: "",
+          email: "",
+          phone: "",
+          type: "kontakt glowny",
+          representation: "nie"
+        }
+      ]
+    });
+    state.startupProfileEditing = true;
+    renderStartupCard();
+    return;
+  }
+
+  const mentoringMainTab = event.target.closest("[data-mentoring-main-tab]");
+  if (mentoringMainTab) {
+    state.mentoringMainTab = mentoringMainTab.dataset.mentoringMainTab;
+    state.mentoringSection = "info";
+    state.mentoringGoalFormOpen = false;
+    state.mentoringEntryFormOpen = false;
+    if (state.mentoringMainTab === "lead") state.mentoringActiveMentorId = "lead-mentor";
+    renderMentoring();
+    return;
+  }
+
+  const openMentor = event.target.closest("[data-open-mentor]");
+  if (openMentor) {
+    state.mentoringActiveMentorId = openMentor.dataset.openMentor;
+    state.mentoringSection = "info";
+    state.mentoringGoalFormOpen = false;
+    state.mentoringEntryFormOpen = false;
+    renderMentoring();
+    return;
+  }
+
+  if (event.target.closest("[data-close-mentor-detail]")) {
+    state.mentoringActiveMentorId = "";
+    state.mentoringSection = "info";
+    renderMentoring();
+    return;
+  }
+
+  const mentorSection = event.target.closest("[data-mentor-section]");
+  if (mentorSection) {
+    state.mentoringSection = mentorSection.dataset.mentorSection;
+    state.mentoringGoalFormOpen = false;
+    state.mentoringEntryFormOpen = false;
+    renderMentoring();
+    return;
+  }
+
+  if (event.target.closest("[data-open-goal-form]")) {
+    state.mentoringGoalFormOpen = true;
+    state.mentoringEditingGoalId = "";
+    renderMentoring();
+    return;
+  }
+
+  if (event.target.closest("[data-close-goal-form]")) {
+    state.mentoringGoalFormOpen = false;
+    state.mentoringEditingGoalId = "";
+    renderMentoring();
+    return;
+  }
+
+  const editGoal = event.target.closest("[data-edit-goal]");
+  if (editGoal) {
+    state.mentoringGoalFormOpen = true;
+    state.mentoringEditingGoalId = editGoal.dataset.editGoal;
+    renderMentoring();
+    return;
+  }
+
+  const deleteGoal = event.target.closest("[data-delete-goal]");
+  if (deleteGoal) {
+    const mentor = mentoringMentor();
+    mentor.goals = mentor.goals.filter((goal) => goal.id !== deleteGoal.dataset.deleteGoal);
+    mentor.entries = mentor.entries.filter((entry) => entry.goalId !== deleteGoal.dataset.deleteGoal);
+    renderMentoring();
+    showToast("Usunieto cel i powiazane wpisy realizacji.");
+    return;
+  }
+
+  if (event.target.closest("[data-open-entry-form]")) {
+    const mentor = mentoringMentor();
+    if (!mentor.goals.length) {
+      showToast("Najpierw dodaj cel w Harmonogramie Mentoringu.");
+      return;
+    }
+    state.mentoringEntryFormOpen = true;
+    renderMentoring();
+    return;
+  }
+
+  if (event.target.closest("[data-close-entry-form]")) {
+    state.mentoringEntryFormOpen = false;
+    renderMentoring();
+    return;
+  }
+
+  const exportMentoring = event.target.closest("[data-export-mentoring-report]");
+  if (exportMentoring) {
+    exportMentoringReport(exportMentoring.dataset.exportMentoringReport);
+    return;
+  }
+
+  const marketingTab = event.target.closest("[data-marketing-tab]");
+  if (marketingTab) {
+    state.marketingTab = marketingTab.dataset.marketingTab;
+    state.marketingProfileEditing = false;
+    state.marketingContestFormOpen = false;
+    state.marketingEditingContestId = "";
+    renderMarketing();
+    return;
+  }
+
+  if (event.target.closest("[data-edit-marketing-profile]")) {
+    state.marketingProfileEditing = true;
+    renderMarketing();
+    return;
+  }
+
+  if (event.target.closest("[data-cancel-marketing-profile]")) {
+    state.marketingProfileEditing = false;
+    renderMarketing();
+    return;
+  }
+
+  const removeMarketingPackage = event.target.closest("[data-remove-marketing-package]");
+  if (removeMarketingPackage) {
+    const item = state.marketingPackageItems.find((entry) => entry.id === removeMarketingPackage.dataset.removeMarketingPackage);
+    if (item) {
+      item.status = "brak";
+      item.link = "";
+      item.text = "";
+      item.fileName = "";
+      item.fileData = "";
+    }
+    renderMarketing();
+    showToast("Usunieto material z paczki marketingowej.");
+    return;
+  }
+
+  if (event.target.closest("[data-open-marketing-contest-form]")) {
+    state.marketingContestFormOpen = true;
+    state.marketingEditingContestId = "";
+    renderMarketing();
+    return;
+  }
+
+  if (event.target.closest("[data-close-marketing-contest-form]")) {
+    state.marketingContestFormOpen = false;
+    state.marketingEditingContestId = "";
+    renderMarketing();
+    return;
+  }
+
+  const editMarketingContest = event.target.closest("[data-edit-marketing-contest]");
+  if (editMarketingContest) {
+    state.marketingContestFormOpen = true;
+    state.marketingEditingContestId = editMarketingContest.dataset.editMarketingContest;
+    renderMarketing();
+    return;
+  }
+
+  const documentsTab = event.target.closest("[data-documents-tab]");
+  if (documentsTab) {
+    state.documentsTab = documentsTab.dataset.documentsTab;
+    renderDocuments();
+    return;
+  }
+
+  const removeDocument = event.target.closest("[data-remove-document-file]");
+  if (removeDocument) {
+    removeDocumentFile(removeDocument.dataset.removeDocumentFile);
+    return;
+  }
+
+  const documentAction = event.target.closest("[data-document-action]");
+  if (documentAction) {
+    applyDocumentAction(documentAction.dataset.documentId, documentAction.dataset.documentAction);
+    return;
+  }
+
+  if (event.target.closest("[data-open-address-book]")) {
+    state.addressBookOpen = true;
+    state.addressBookFormOpen = false;
+    state.editingContactId = "";
+    renderStart();
+    return;
+  }
+
+  const closeAddressBook = event.target.closest("button[data-close-address-book]");
+  const addressBookBackdropClick = event.target.classList.contains("address-book-backdrop");
+  if (closeAddressBook || addressBookBackdropClick) {
+    state.addressBookOpen = false;
+    state.addressBookFormOpen = false;
+    state.editingContactId = "";
+    renderStart();
+    return;
+  }
+
+  if (event.target.closest("[data-add-contact]")) {
+    state.addressBookFormOpen = true;
+    state.editingContactId = "";
+    renderStart();
+    return;
+  }
+
+  if (event.target.closest("[data-contact-form-close]")) {
+    state.addressBookFormOpen = false;
+    state.editingContactId = "";
+    renderStart();
+    return;
+  }
+
+  const editContact = event.target.closest("[data-edit-contact]");
+  if (editContact) {
+    state.addressBookFormOpen = true;
+    state.editingContactId = editContact.dataset.editContact;
+    renderStart();
+    return;
+  }
+
+  const deleteContact = event.target.closest("[data-delete-contact]");
+  if (deleteContact) {
+    state.addressBookContacts = state.addressBookContacts.filter((contact) => contact.id !== deleteContact.dataset.deleteContact);
+    state.addressBookFormOpen = false;
+    state.editingContactId = "";
+    renderStart();
+    showToast("Usunieto kontakt z lokalnej ksiazki teleadresowej.");
+    return;
+  }
+
+  const submitContact = event.target.closest("[data-submit-contact]");
+  if (submitContact) {
+    event.preventDefault();
+    const form = submitContact.closest("#contact-form");
+    if (!form) return;
+    if (form?.reportValidity && !form.reportValidity()) return;
+    await saveContactFromForm(form);
+    return;
+  }
+
+  if (event.target.closest("[data-address-book-panel]")) return;
+
   const closeButton = event.target.closest("button[data-close-calendar-modal]");
   const backdropClick = event.target.classList.contains("modal-backdrop");
   if (closeButton || backdropClick) {
@@ -1124,6 +4052,7 @@ document.addEventListener("click", async (event) => {
 
   const go = event.target.closest("[data-go]");
   if (go) {
+    state.startupProfileEditing = false;
     setView(go.dataset.go);
     window.scrollTo({ top: 0, behavior: "smooth" });
     return;
@@ -1136,18 +4065,6 @@ document.addEventListener("click", async (event) => {
     const startAt = `${calendarAdd.dataset.calendarAdd}T09:00`;
     state.calendarModal = { startAt, endAt: addMinutesToDateTime(startAt, 60) };
     renderCalendar();
-    return;
-  }
-
-  if (event.target.closest("[data-show-document-form]")) {
-    state.showDocumentForm = true;
-    renderDocuments();
-    return;
-  }
-
-  if (event.target.closest("[data-hide-document-form]")) {
-    state.showDocumentForm = false;
-    renderDocuments();
     return;
   }
 
@@ -1185,6 +4102,16 @@ document.addEventListener("click", async (event) => {
 });
 
 document.addEventListener("input", (event) => {
+  if (event.target.id === "contact-search") {
+    const position = event.target.selectionStart || event.target.value.length;
+    state.contactSearch = event.target.value;
+    renderStart();
+    const searchInput = document.querySelector("#contact-search");
+    searchInput?.focus();
+    searchInput?.setSelectionRange(position, position);
+    return;
+  }
+
   if (["expense-search", "priority-filter", "detail-filter", "status-filter"].includes(event.target.id)) {
     filterExpenses();
   }
@@ -1193,7 +4120,67 @@ document.addEventListener("input", (event) => {
   }
 });
 
+document.addEventListener("dragover", (event) => {
+  const uploadBox = event.target.closest("[data-document-upload-form]");
+  if (!uploadBox) return;
+  event.preventDefault();
+  uploadBox.classList.add("is-dragging");
+});
+
+document.addEventListener("dragleave", (event) => {
+  const uploadBox = event.target.closest("[data-document-upload-form]");
+  if (!uploadBox) return;
+  uploadBox.classList.remove("is-dragging");
+});
+
+document.addEventListener("drop", (event) => {
+  const uploadBox = event.target.closest("[data-document-upload-form]");
+  if (!uploadBox) return;
+  event.preventDefault();
+  uploadBox.classList.remove("is-dragging");
+  const input = uploadBox.querySelector('input[name="pdfFile"]');
+  if (input && event.dataTransfer?.files?.length) {
+    input.files = event.dataTransfer.files;
+    showToast(`Wybrano plik: ${event.dataTransfer.files[0].name}`);
+  }
+});
+
 document.addEventListener("change", async (event) => {
+  if (event.target.closest("[data-mentoring-export-month]")) {
+    state.mentoringExportMonth = event.target.value;
+    return;
+  }
+
+  if (event.target.closest("[data-marketing-material-filter]")) {
+    state.marketingMaterialFilter = event.target.value;
+    renderMarketing();
+    return;
+  }
+
+  if (event.target.closest("[data-marketing-contest-status-filter]")) {
+    state.marketingContestStatusFilter = event.target.value;
+    renderMarketing();
+    return;
+  }
+
+  if (event.target.closest("[data-marketing-contest-type-filter]")) {
+    state.marketingContestTypeFilter = event.target.value;
+    renderMarketing();
+    return;
+  }
+
+  const emergencyStatus = event.target.closest("[data-document-emergency-status]");
+  if (emergencyStatus) {
+    emergencyChangeDocumentStatus(emergencyStatus.dataset.documentEmergencyStatus, emergencyStatus.value);
+    return;
+  }
+
+  if (event.target.id === "contact-category-filter") {
+    state.contactCategory = event.target.value;
+    renderStart();
+    return;
+  }
+
   if (["status-filter", "priority-filter", "detail-filter"].includes(event.target.id)) {
     filterExpenses();
     return;
@@ -1201,12 +4188,6 @@ document.addEventListener("change", async (event) => {
 
   if (event.target.id === "vatRate") {
     calculateExpenseTotals();
-    return;
-  }
-
-  if (event.target.id === "startup-beneficiary") {
-    state.startupCardBeneficiaryId = event.target.value;
-    renderStartupCard();
     return;
   }
 
@@ -1221,21 +4202,57 @@ document.addEventListener("change", async (event) => {
     return;
   }
 
-  const documentStatus = event.target.closest("[data-status-document]");
-  if (documentStatus) {
-    await api(`/api/documents/${documentStatus.dataset.statusDocument}`, {
-      method: "PATCH",
-      body: JSON.stringify({ actorId: state.actorId, status: documentStatus.value })
-    });
-    showToast("Status dokumentu zostal zaktualizowany.");
-    await loadState();
-  }
 });
 
 document.addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = event.target;
   try {
+    if (form.id === "contact-form") {
+      await saveContactFromForm(form);
+      return;
+    }
+
+    if (form.id === "startup-profile-form") {
+      saveStartupProfileFromForm(form);
+      return;
+    }
+
+    if (form.id === "mentoring-goal-form") {
+      saveMentoringGoal(form);
+      return;
+    }
+
+    if (form.id === "mentoring-entry-form") {
+      saveMentoringEntry(form);
+      return;
+    }
+
+    if (form.matches("[data-marketing-package-form]")) {
+      await saveMarketingPackageItem(form);
+      return;
+    }
+
+    if (form.id === "marketing-profile-form") {
+      saveMarketingProfile(form);
+      return;
+    }
+
+    if (form.id === "marketing-contest-form") {
+      await saveMarketingContest(form);
+      return;
+    }
+
+    if (form.matches("[data-document-upload-form]")) {
+      await saveDocumentPdf(form);
+      return;
+    }
+
+    if (form.matches("[data-document-comment-form]")) {
+      saveDocumentComment(form);
+      return;
+    }
+
     if (form.id === "expense-form") {
       const payload = formDataToObject(form);
       payload.actorId = state.actorId;
@@ -1251,32 +4268,6 @@ document.addEventListener("submit", async (event) => {
       showToast("Dodano wydatek i zalaczniki do lokalnej bazy.");
       await loadState();
       setView("expenses");
-    }
-
-    if (form.id === "document-form") {
-      const payload = formDataToObject(form);
-      payload.actorId = state.actorId;
-      payload.files = await filesToPayload(form.querySelector("#document-files")?.files);
-      await api("/api/documents", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
-      state.showDocumentForm = false;
-      showToast("Dodano dokument i zapisano zalaczniki lokalnie.");
-      await loadState();
-    }
-
-    if (form.id === "startup-card-form") {
-      const payload = formDataToObject(form);
-      const beneficiaryId = payload.beneficiaryId;
-      delete payload.beneficiaryId;
-      payload.actorId = state.actorId;
-      await api(`/api/startup-cards/${beneficiaryId}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload)
-      });
-      showToast("Zapisano Karte Startupu.");
-      await loadState();
     }
 
     if (form.id === "calendar-form") {

@@ -8,36 +8,61 @@
   </head>
   <body>
     <div class="app-shell">
-      <header class="topbar">
-        <a class="brand" href="#start" aria-label="Akces NCBR - start">
-          <span class="brand-mark">AKCES</span>
-          <span class="brand-name">Akces NCBR</span>
-        </a>
-        <nav class="nav-tabs" aria-label="Menu glowne">
-          <button class="nav-button is-active" data-view="start">Start</button>
-          <button class="nav-button" data-view="startup-card">Karta Startupu</button>
-          <button class="nav-button" data-view="expenses">Wydatki</button>
-          <button class="nav-button" data-view="documents">Dokumenty</button>
-          <button class="nav-button" data-view="calendar">Kalendarz</button>
-          <button class="nav-button" data-view="reports">Raporty</button>
-          <button class="nav-button" data-view="tutorial">Samouczek</button>
-          <button class="nav-button" data-view="settings">Ustawienia</button>
-        </nav>
-        <div class="top-context" aria-label="Kontekst danych">
-          <div class="field compact">
-            <label for="actor-select">Dzialam jako</label>
-            <select id="actor-select"></select>
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-top">
+          <div class="brand-menu">
+            <button class="brand brand-trigger" type="button" data-context-toggle aria-expanded="false" aria-controls="context-menu">
+              <span class="brand-mark">AKCES</span>
+              <span class="brand-name">Akces NCBR</span>
+              <span class="brand-caret" aria-hidden="true">v</span>
+            </button>
+            <div class="context-menu" id="context-menu" hidden>
+              <p class="context-menu-title">Kontekst pracy</p>
+              <div class="field compact">
+                <label for="actor-select">Dzialam jako</label>
+                <select id="actor-select"></select>
+              </div>
+              <div class="field compact">
+                <label for="scope-select">Zakres danych</label>
+                <select id="scope-select"></select>
+              </div>
+              <button class="context-placeholder" type="button" disabled>Przyszle ustawienia uzytkownika</button>
+            </div>
           </div>
-          <div class="field compact">
-            <label for="scope-select">Zakres danych</label>
-            <select id="scope-select"></select>
-          </div>
+          <button class="icon-button sidebar-collapse" type="button" data-sidebar-collapse aria-label="Zwin panel boczny" aria-expanded="true">
+            <span aria-hidden="true">&lt;</span>
+          </button>
         </div>
-      </header>
+        <nav class="sidebar-nav" aria-label="Menu glowne">
+          <button class="nav-button is-active" data-view="start"><span class="nav-icon" aria-hidden="true">ST</span><span class="nav-label">Start</span></button>
+          <button class="nav-button" data-view="startup-card"><span class="nav-icon" aria-hidden="true">KS</span><span class="nav-label">Karta startupu</span></button>
+          <button class="nav-button" data-view="documents"><span class="nav-icon" aria-hidden="true">DK</span><span class="nav-label">Dokumenty</span></button>
+          <button class="nav-button" data-view="calendar"><span class="nav-icon" aria-hidden="true">KL</span><span class="nav-label">Kalendarz</span></button>
+          <button class="nav-button" data-view="mentoring"><span class="nav-icon" aria-hidden="true">MT</span><span class="nav-label">Mentoring</span></button>
+          <button class="nav-button" data-view="expenses"><span class="nav-icon" aria-hidden="true">GW</span><span class="nav-label">Grant i wydatki</span></button>
+          <button class="nav-button" data-view="marketing"><span class="nav-icon" aria-hidden="true">MK</span><span class="nav-label">Marketing</span></button>
+          <button class="nav-button" data-view="reports"><span class="nav-icon" aria-hidden="true">RP</span><span class="nav-label">Raporty</span></button>
+          <button class="nav-button" data-view="tutorial"><span class="nav-icon" aria-hidden="true">SM</span><span class="nav-label">Samouczek</span></button>
+          <button class="nav-button" data-view="settings"><span class="nav-icon" aria-hidden="true">US</span><span class="nav-label">Ustawienia</span></button>
+        </nav>
+      </aside>
+      <div class="sidebar-overlay" data-sidebar-overlay></div>
 
-      <main class="workspace">
-        <section class="content" id="app"></section>
-      </main>
+      <div class="main-shell">
+        <header class="topbar">
+          <button class="icon-button mobile-sidebar-toggle" type="button" data-sidebar-mobile-toggle aria-label="Otworz menu glowne">
+            <span class="menu-lines" aria-hidden="true"><span></span><span></span><span></span></span>
+          </button>
+          <div>
+            <p class="topbar-kicker">Akces NCBR</p>
+            <strong id="current-view-label">Start</strong>
+          </div>
+        </header>
+
+        <main class="workspace">
+          <section class="content" id="app"></section>
+        </main>
+      </div>
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
