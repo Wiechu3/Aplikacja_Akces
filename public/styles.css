@@ -154,6 +154,10 @@ summary {
   width: min(420px, 36vw);
 }
 
+.global-search.is-open {
+  z-index: 20;
+}
+
 .global-search-box {
   display: grid;
   grid-template-columns: 26px minmax(0, 1fr);
@@ -1171,11 +1175,17 @@ dd {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 46px;
   gap: 14px;
-  align-items: center;
+  align-items: end;
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fbfbfc;
+}
+
+.task-card > div {
+  display: grid;
+  min-width: 0;
+  align-content: start;
 }
 
 .task-card h3 {
@@ -1189,6 +1199,7 @@ dd {
   margin: 0;
   color: var(--muted);
   line-height: 1.48;
+  overflow-wrap: anywhere;
 }
 
 .task-due {
@@ -1203,6 +1214,8 @@ dd {
   width: 46px;
   height: 46px;
   min-height: 46px;
+  align-self: end;
+  justify-self: end;
   border-color: #ffd8c0;
   background: var(--akces-orange-pale);
   color: var(--orange-dark);
@@ -1252,6 +1265,14 @@ dd {
   width: 100%;
   min-width: 0;
   white-space: nowrap;
+}
+
+.supervisor-actions .button {
+  color: #fff;
+}
+
+.supervisor-actions .button.secondary {
+  color: var(--ink);
 }
 
 .supervisor-card dl {
@@ -3513,6 +3534,81 @@ button:disabled {
     padding-inline: 12px;
   }
 
+  .topbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    min-height: 58px;
+    padding: 8px 12px;
+  }
+
+  .topbar-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 9px;
+  }
+
+  .topbar-actions {
+    flex: 0 0 auto;
+    gap: 8px;
+    margin-left: 0;
+  }
+
+  .topbar.is-search-active .topbar-main > div {
+    display: none;
+  }
+
+  .topbar.is-search-active .topbar-main {
+    flex: 0 0 auto;
+  }
+
+  .topbar.is-search-active .topbar-actions {
+    flex: 1 1 auto;
+  }
+
+  .global-search {
+    flex: 0 0 46px;
+    width: 46px;
+  }
+
+  .global-search.is-open {
+    flex: 1 1 auto;
+    width: auto;
+  }
+
+  .global-search-box {
+    min-height: 46px;
+  }
+
+  .global-search:not(.is-open) .global-search-box {
+    grid-template-columns: 1fr;
+    gap: 0;
+    place-items: center;
+    padding: 0;
+  }
+
+  .global-search:not(.is-open) .global-search-box input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    min-height: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .global-search.is-open .search-results-panel {
+    right: auto;
+    left: 50%;
+    width: calc(100vw - 24px);
+    transform: translateX(-50%);
+  }
+
+  .dashboard-toolbar h1 {
+    font-size: clamp(2.65rem, 15vw, 4.2rem);
+    line-height: 0.95;
+  }
+
   .section-head,
   .doc-card,
   .calendar-card,
@@ -3531,7 +3627,56 @@ button:disabled {
   }
 
   .summary-strip.start-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .summary-strip.start-summary article {
+    min-height: 64px;
+    padding: 8px 10px;
+  }
+
+  .summary-strip.start-summary span {
+    font-size: 0.76rem;
+  }
+
+  .summary-strip.start-summary strong {
+    margin-top: 4px;
+    font-size: 1.02rem;
+  }
+
+  .welcome-panel {
+    min-height: 340px;
+    align-content: center;
+    padding: 24px 18px;
+    text-align: center;
+  }
+
+  .welcome-panel h2 {
+    font-size: clamp(1.9rem, 10vw, 2.65rem);
+  }
+
+  .welcome-panel p {
+    max-width: 34ch;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .project-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .project-facts dd,
+  .supervisor-card dd,
+  .mentor-facts dd {
+    overflow-wrap: anywhere;
+  }
+
+  .supervisor-card a[href^="mailto:"],
+  .mentor-facts a[href^="mailto:"] {
+    font-size: 0.9rem;
+    white-space: normal;
   }
 
   .dashboard-toolbar,
@@ -3545,6 +3690,82 @@ button:disabled {
     right: 0;
     left: auto;
     width: min(360px, calc(100vw - 24px));
+  }
+
+  .task-card {
+    grid-template-columns: minmax(0, 1fr) 46px;
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .attention-panel {
+    padding: 14px;
+  }
+
+  .task-card h3,
+  .task-card p {
+    width: 100%;
+  }
+
+  .task-card p {
+    text-align: left;
+    text-align-last: left;
+  }
+
+  .task-due {
+    align-self: end;
+    margin-top: 10px;
+  }
+
+  .supervisor-card {
+    justify-items: center;
+    padding: 24px 16px;
+    text-align: center;
+  }
+
+  .supervisor-main {
+    display: grid;
+    justify-items: center;
+  }
+
+  .supervisor-card dl {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .supervisor-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .mentor-card,
+  .mentor-section-panel .card {
+    text-align: center;
+  }
+
+  .mentor-card-head {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .mentor-facts,
+  .mentor-facts.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .mentor-facts div {
+    text-align: center;
+  }
+
+  .mentor-facts div:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .mentor-facts div:last-child:nth-child(odd) {
+    grid-column: auto;
   }
 
   .calendar-toolbar {

@@ -1194,12 +1194,14 @@ function renderGlobalSearch() {
   if (!globalSearch) return;
   const results = currentSearchResults();
   const showPanel = state.searchOpen && state.searchQuery.trim().length > 0;
+  globalSearch.classList.toggle("is-open", state.searchOpen);
+  document.querySelector(".topbar")?.classList.toggle("is-search-active", state.searchOpen);
   globalSearch.innerHTML = `
     <label class="global-search-box">
       <span aria-hidden="true">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 4 4"></path></svg>
       </span>
-      <input id="global-search-input" type="search" value="${escapeHtml(state.searchQuery)}" placeholder="Szukaj" autocomplete="off" />
+      <input id="global-search-input" type="search" value="${escapeHtml(state.searchQuery)}" placeholder="Szukaj" aria-label="Szukaj" autocomplete="off" />
     </label>
     <div class="search-results-panel" ${showPanel ? "" : "hidden"}>
       ${results.length ? results.map(searchResult).join("") : emptyState("Brak wynikow dla podanej frazy", "Sprobuj wpisac nazwe dokumentu, mentora, konkursu albo status.")}
@@ -5158,6 +5160,18 @@ document.addEventListener("click", async (event) => {
     });
     showToast("Zaktualizowano status beneficjenta.");
     await loadState();
+  }
+});
+
+document.addEventListener("focusin", (event) => {
+  if (event.target.id === "global-search-input" && !state.searchOpen) {
+    state.searchOpen = true;
+    renderGlobalSearch();
+    requestAnimationFrame(() => {
+      const input = document.querySelector("#global-search-input");
+      input?.focus();
+      input?.setSelectionRange(state.searchQuery.length, state.searchQuery.length);
+    });
   }
 });
 
