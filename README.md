@@ -1,18 +1,14 @@
 # Akces NCBR MVP
 
-Lokalne MVP aplikacji webowej do prezentacji kierunku rozwoju systemu Akces NCBR.
+Demo aplikacji webowej do projektowania docelowego frontendu systemu Akces NCBR.
 
-## Uruchomienie
+Na obecnym etapie aplikacja dziala jako statyczny mockup frontendu: widoki, formularze, powiadomienia, kalendarz i eksporty sa obslugiwane po stronie przegladarki. Dane demo sa zapisywane w `localStorage`, a gdy przegladarka blokuje storage, aplikacja korzysta z pamieci sesji strony.
+
+## Uruchomienie lokalne
 
 ```bash
 npm install
 npm start
-```
-
-Aby serwer automatycznie restartował się po zmianach plików:
-
-```bash
-npm run dev
 ```
 
 Aplikacja startuje domyslnie pod adresem:
@@ -21,19 +17,19 @@ Aplikacja startuje domyslnie pod adresem:
 http://localhost:3001
 ```
 
-## Dane lokalne
+Serwer lokalny sluzy teraz glownie do wygodnego podawania plikow z katalogu `public/`. Frontend demo nie wymaga endpointow backendowych do podstawowych klikanych funkcji.
 
-Wszystkie dane uzytkowe sa zapisywane w katalogu `local-data/`, ktory jest wpisany do `.gitignore`.
-Dzieki temu dokumenty, zalaczniki i robocze dane beneficjentow nie beda przenoszone przez GitHub pomiedzy instancjami.
+## Deploy na Vercel
 
-Po dodaniu beneficjenta backend tworzy strukture:
+Mozesz wrzucic projekt na Vercel jako statyczna aplikacje. Vercel powinien serwowac katalog `public/`, w ktorym sa:
 
-```text
-local-data/
-  beneficiaries/
-    nazwa-beneficjenta/
-      documents/
-      expenses/
-      uploads/
-      reports/
-```
+- `index.html`
+- `app.js`
+- `styles.css`
+- lokalne pliki FullCalendar w `public/vendor/fullcalendar/`
+
+Nie wrzucamy danych roboczych z `local-data/`, bo katalog jest wpisany do `.gitignore`.
+
+## Backend pozniej
+
+`server.js` zostaje w repo jako lokalna referencja do przyszlego backendu. Gdy front bedzie zatwierdzony, mozna na jego podstawie podmienic mock API z `public/app.js` na prawdziwe endpointy.

@@ -150,7 +150,7 @@ function seedData() {
     startupCards: {
       ben_fundacja_demo: {
         ...emptyStartupCard({ id: "ben_fundacja_demo", name: "Fundacja Demo" }),
-        acronym: "FD",
+        acronym: "APPLC",
         projectSupervisor: "ADMIN",
         bio: "Demo karty startupu z podstawowymi informacjami o beneficjencie."
       },

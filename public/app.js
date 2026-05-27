@@ -165,11 +165,11 @@ const documentWorkflowStatuses = [
 const accelerationProject = {
   program: "HPN IMPAKT / Akces NCBR",
   stage: "Realizacja akceleracji",
-  period: "28.04.2026-27.10.2026",
+  period: "28.04.2026 - 27.10.2026",
   progress: 38,
   status: "Aktywny",
   projectName: "Platforma rozwoju technologii w programie Akces NCBR",
-  acronym: "AKCES-IMPAKT"
+  acronym: "APPLC"
 };
 
 const attentionTasks = [
@@ -559,18 +559,18 @@ state.mentoringMentors = defaultMentoringMentors.map((mentor) => ({
 }));
 
 const defaultMarketingPackageItems = [
-  { id: "logo", title: "Logo startupu", status: "zaakceptowano", kind: "file", link: "", text: "Podstawowy logotyp SeaMesh.", fileName: "seamesh-logo.png", fileData: "" },
-  { id: "logo-light", title: "Logo w wersji jasnej", status: "dodano", kind: "file", link: "", text: "Wersja do ciemnego tla.", fileName: "seamesh-logo-light.svg", fileData: "" },
+  { id: "logo", title: "Logo startupu", status: "zaakceptowano", kind: "file", link: "", text: "Podstawowy logotyp APPLC.", fileName: "applc-demo-logo.png", fileData: "" },
+  { id: "logo-light", title: "Logo w wersji jasnej", status: "dodano", kind: "file", link: "", text: "Wersja do ciemnego tla.", fileName: "applc-demo-logo-light.svg", fileData: "" },
   { id: "logo-dark", title: "Logo w wersji ciemnej", status: "brak", kind: "file", link: "", text: "", fileName: "", fileData: "" },
-  { id: "short-description", title: "Krotki opis startupu", status: "zaakceptowano", kind: "text", link: "", text: "SeaMesh pomaga planowac uprawe warzyw zgodnie z kalendarzem biodynamicznym.", fileName: "", fileData: "" },
+  { id: "short-description", title: "Krotki opis startupu", status: "zaakceptowano", kind: "text", link: "", text: "APPLC pomaga planowac uprawe warzyw zgodnie z kalendarzem biodynamicznym.", fileName: "", fileData: "" },
   { id: "long-description", title: "Dluzszy opis startupu", status: "do poprawy", kind: "text", link: "", text: "Opis wymaga doprecyzowania zastosowan dla gospodarstw i ogrodow spolecznych.", fileName: "", fileData: "" },
   { id: "project-description", title: "Opis projektu realizowanego w programie", status: "dodano", kind: "text", link: "", text: "Projekt rozwija cyfrowy planer prac ogrodniczych oparty o fazy ksiezyca i dni korzenia, liscia, kwiatu oraz owocu.", fileName: "", fileData: "" },
-  { id: "team-photos", title: "Zdjecia zespolu", status: "dodano", kind: "file", link: "", text: "Zdjecia robocze do selekcji.", fileName: "zespol-seamesh.zip", fileData: "" },
+  { id: "team-photos", title: "Zdjecia zespolu", status: "dodano", kind: "file", link: "", text: "Zdjecia robocze do selekcji.", fileName: "zespol-applc-demo.zip", fileData: "" },
   { id: "founders-photo", title: "Zdjecie founderow / reprezentantow", status: "brak", kind: "file", link: "", text: "", fileName: "", fileData: "" },
   { id: "product-graphics", title: "Grafiki lub zdjecia produktu", status: "dodano", kind: "file", link: "", text: "Zrzuty ekranu planera upraw.", fileName: "product-screens.zip", fileData: "" },
-  { id: "website", title: "Link do strony www", status: "dodano", kind: "link", link: "https://seamesh.example.com", text: "", fileName: "", fileData: "" },
+  { id: "website", title: "Link do strony www", status: "dodano", kind: "link", link: "https://applc-demo.example.com", text: "", fileName: "", fileData: "" },
   { id: "linkedin", title: "Link do LinkedIna", status: "brak", kind: "link", link: "", text: "", fileName: "", fileData: "" },
-  { id: "demo", title: "Link do demo / filmu / prezentacji", status: "dodano", kind: "link", link: "https://demo.example.com/seamesh", text: "Wersja demo do pokazywania partnerom programu.", fileName: "", fileData: "" },
+  { id: "demo", title: "Link do demo / filmu / prezentacji", status: "dodano", kind: "link", link: "https://demo.example.com/applc-demo", text: "Wersja demo do pokazywania partnerom programu.", fileName: "", fileData: "" },
   { id: "pitch", title: "Krotki pitch, 2-3 zdania", status: "zaakceptowano", kind: "text", link: "", text: "Tworzymy planer upraw, ktory laczy praktyke ogrodnicza z kalendarzem biodynamicznym. Pomaga dobrac prace do dni korzenia, liscia, kwiatu i owocu.", fileName: "", fileData: "" },
   { id: "consent", title: "Zgoda na wykorzystanie materialow marketingowych", status: "brak", kind: "file", link: "", text: "", fileName: "", fileData: "" }
 ];
@@ -584,8 +584,8 @@ const defaultMarketingProfile = {
   achievements: "Pierwszy prototyp planera, testy z ogrodami spolecznymi i baza ponad 40 popularnych warzyw.",
   tags: "agritech, ogrodnictwo, edukacja ekologiczna, warzywa, kalendarz biodynamiczny",
   impact: "Wsparcie lokalnej produkcji zywnosci, ograniczanie strat w uprawach i edukacja klimatyczna.",
-  shortPublication: "SeaMesh tworzy planer upraw warzyw zgodny z kalendarzem biodynamicznym.",
-  longPublication: "SeaMesh pomaga ogrodnikom i malym gospodarstwom planowac prace w rytmie dni korzenia, liscia, kwiatu i owocu. Narzedzie laczy kalendarz, zadania i proste rekomendacje dla sezonowej uprawy warzyw.",
+  shortPublication: "APPLC tworzy planer upraw warzyw zgodny z kalendarzem biodynamicznym.",
+  longPublication: "APPLC pomaga ogrodnikom i malym gospodarstwom planowac prace w rytmie dni korzenia, liscia, kwiatu i owocu. Narzedzie laczy kalendarz, zadania i proste rekomendacje dla sezonowej uprawy warzyw.",
   founderQuote: "Chcemy, zeby planowanie ogrodu bylo spokojniejsze, bardziej swiadome i oparte na rytmie natury.",
   presentationPreference: "Pokazywac startup jako praktyczne narzedzie agritech dla ekologicznej uprawy warzyw, bez tonu ezoterycznego."
 };
@@ -600,7 +600,7 @@ const defaultAkcesMarketingMaterials = [
 ];
 
 const defaultMarketingPublications = [
-  { id: "pub-1", title: "Post o starcie akceleracji", type: "post o startupie", description: "Krotki wpis przedstawiajacy startup i temat projektu.", status: "opublikowana", plannedAt: "2026-05-30", url: "https://akces.example.com/post-seamesh", fileName: "" },
+  { id: "pub-1", title: "Post o starcie akceleracji", type: "post o startupie", description: "Krotki wpis przedstawiajacy startup i temat projektu.", status: "opublikowana", plannedAt: "2026-05-30", url: "https://akces.example.com/post-applc-demo", fileName: "" },
   { id: "pub-2", title: "Opis na stronie programu", type: "opis na stronie programu", description: "Profil startupu na stronie Akces NCBR.", status: "wyslana do akceptacji", plannedAt: "2026-06-06", url: "", fileName: "opis-do-akceptacji.docx" },
   { id: "pub-3", title: "Newsletter dla partnerow", type: "newsletter", description: "Wzmianka o projekcie i jego zastosowaniu w ogrodach edukacyjnych.", status: "w przygotowaniu", plannedAt: "2026-06-18", url: "", fileName: "" },
   { id: "pub-4", title: "Case study po pilocie", type: "case study", description: "Material planowany po pierwszym pilocie z ogrodem spolecznym.", status: "planowana", plannedAt: "2026-09-15", url: "", fileName: "" }
@@ -691,7 +691,7 @@ const defaultDocumentWorkflowDocs = [
   {
     id: "contract-main",
     documentType: "contract",
-    title: "Umowa akceleracyjna SeaMesh",
+    title: "Umowa akceleracyjna APPLC",
     typeLabel: "Umowa akceleracyjna",
     status: "Oczekuje na podpis osoby upowaznionej",
     currentStep: "Akces / osoba upowazniona podpisuje zweryfikowana umowe.",
@@ -700,14 +700,14 @@ const defaultDocumentWorkflowDocs = [
       { role: "Akces / Opiekun Projektu", state: "zweryfikowano" },
       { role: "Akces / osoba upowazniona", state: "oczekuje" }
     ],
-    currentFile: mockPdfFile("Umowa_akceleracyjna_SeaMesh_podpis_Beneficjent.pdf"),
+    currentFile: mockPdfFile("Umowa_akceleracyjna_APPLC_podpis_Beneficjent.pdf"),
     fileVersions: [],
     comments: [
       { id: "comment-contract-1", author: "Julia Bareja", role: "Opiekun Projektu", timestamp: "2026-05-26T15:10:00", text: "Plik zweryfikowany i przekazany do podpisu osoby upowaznionej." }
     ],
     history: [
-      docHistory("contract-main", "2026-05-26T14:22:00", "Jan Nowak", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie umowy przez Beneficjenta", "Oczekuje na weryfikacje Akces", "Beneficjent dodal podpisana umowe.", "Umowa_akceleracyjna_SeaMesh_podpis_Beneficjent.pdf", "", "Umowa_akceleracyjna_SeaMesh_podpis_Beneficjent.pdf"),
-      docHistory("contract-main", "2026-05-26T15:10:00", "Julia Bareja", "Opiekun Projektu", "Zweryfikowano dokument", "Oczekuje na weryfikacje Akces", "Oczekuje na podpis osoby upowaznionej", "Plik poprawny, przekazano do podpisu osoby upowaznionej.", "Umowa_akceleracyjna_SeaMesh_podpis_Beneficjent.pdf")
+      docHistory("contract-main", "2026-05-26T14:22:00", "Jan Nowak", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie umowy przez Beneficjenta", "Oczekuje na weryfikacje Akces", "Beneficjent dodal podpisana umowe.", "Umowa_akceleracyjna_APPLC_podpis_Beneficjent.pdf", "", "Umowa_akceleracyjna_APPLC_podpis_Beneficjent.pdf"),
+      docHistory("contract-main", "2026-05-26T15:10:00", "Julia Bareja", "Opiekun Projektu", "Zweryfikowano dokument", "Oczekuje na weryfikacje Akces", "Oczekuje na podpis osoby upowaznionej", "Plik poprawny, przekazano do podpisu osoby upowaznionej.", "Umowa_akceleracyjna_APPLC_podpis_Beneficjent.pdf")
     ],
     createdAt: "2026-05-20T10:00:00",
     updatedAt: "2026-05-26T15:10:00"
@@ -774,12 +774,12 @@ const defaultDocumentWorkflowDocs = [
       { role: "Beneficjent", state: "dodano" },
       { role: "Akces", state: "zaakceptowano" }
     ],
-    currentFile: mockPdfFile("Pelnomocnictwo_SeaMesh.pdf", "Maria Nowak", "Beneficjent", "2026-05-19T09:20:00"),
+    currentFile: mockPdfFile("Pelnomocnictwo_APPLC.pdf", "Maria Nowak", "Beneficjent", "2026-05-19T09:20:00"),
     fileVersions: [],
     comments: [],
     history: [
-      docHistory("formal-pelnomocnictwo", "2026-05-19T09:20:00", "Maria Nowak", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie pliku", "Oczekuje na weryfikacje Akces", "Dodano pelnomocnictwo.", "Pelnomocnictwo_SeaMesh.pdf", "", "Pelnomocnictwo_SeaMesh.pdf"),
-      docHistory("formal-pelnomocnictwo", "2026-05-19T12:05:00", "Julia Bareja", "Opiekun Projektu", "Zaakceptowano dokument", "Oczekuje na weryfikacje Akces", "Zaakceptowany", "Dokument poprawny.", "Pelnomocnictwo_SeaMesh.pdf")
+      docHistory("formal-pelnomocnictwo", "2026-05-19T09:20:00", "Maria Nowak", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie pliku", "Oczekuje na weryfikacje Akces", "Dodano pelnomocnictwo.", "Pelnomocnictwo_APPLC.pdf", "", "Pelnomocnictwo_APPLC.pdf"),
+      docHistory("formal-pelnomocnictwo", "2026-05-19T12:05:00", "Julia Bareja", "Opiekun Projektu", "Zaakceptowano dokument", "Oczekuje na weryfikacje Akces", "Zaakceptowany", "Dokument poprawny.", "Pelnomocnictwo_APPLC.pdf")
     ],
     createdAt: "2026-05-19T09:20:00",
     updatedAt: "2026-05-19T12:05:00"
@@ -797,11 +797,11 @@ const defaultDocumentWorkflowDocs = [
       { role: "Beneficjent", state: "dodano" },
       { role: "Akces", state: "weryfikacja" }
     ],
-    currentFile: mockPdfFile("Specyfikacja_projektu_SeaMesh.pdf", "Olga Kaminska", "Beneficjent", "2026-05-23T10:30:00"),
+    currentFile: mockPdfFile("Specyfikacja_projektu_APPLC.pdf", "Olga Kaminska", "Beneficjent", "2026-05-23T10:30:00"),
     fileVersions: [],
     comments: [],
     history: [
-      docHistory("other-1", "2026-05-23T10:30:00", "Olga Kaminska", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie pliku", "Oczekuje na weryfikacje Akces", "Dodano specyfikacje projektu.", "Specyfikacja_projektu_SeaMesh.pdf", "", "Specyfikacja_projektu_SeaMesh.pdf")
+      docHistory("other-1", "2026-05-23T10:30:00", "Olga Kaminska", "Beneficjent", "Dodano plik PDF", "Oczekuje na dodanie pliku", "Oczekuje na weryfikacje Akces", "Dodano specyfikacje projektu.", "Specyfikacja_projektu_APPLC.pdf", "", "Specyfikacja_projektu_APPLC.pdf")
     ],
     createdAt: "2026-05-23T10:30:00",
     updatedAt: "2026-05-23T10:30:00"
@@ -853,6 +853,8 @@ const contextToggle = document.querySelector("[data-context-toggle]");
 const sidebarCollapse = document.querySelector("[data-sidebar-collapse]");
 const notificationMenu = document.querySelector("#notification-menu");
 const globalSearch = document.querySelector("#global-search");
+const mockStorageKey = "akces-static-demo-data";
+let inMemoryMockData = null;
 
 new MutationObserver(() => {
   document.querySelectorAll("form").forEach((form) => {
@@ -998,27 +1000,28 @@ function renderNotificationMenu() {
     </button>
     <div class="notifications-panel" ${state.notificationsOpen ? "" : "hidden"}>
       <div class="notifications-head">
-        <div>
-          <h2>Powiadomienia</h2>
-          <p>${unreadCount ? `${unreadCount} nieprzeczytane` : "Wszystko przeczytane"}</p>
-        </div>
-        <button class="button ghost compact-button" type="button" data-notifications-mark-all>Oznacz wszystkie</button>
+        <h2>Powiadomienia</h2>
+        <p>${unreadCount ? `${unreadCount} nieprzeczytane` : "Wszystko przeczytane"}</p>
       </div>
       <div class="notifications-list">
         ${notifications.map((item) => `
           <article class="${item.read ? "is-read" : "is-unread"}" data-notification-id="${escapeHtml(item.id)}">
-            <div>
-              ${statusBadge(moduleName(item.module), `notification-type tone-${notificationTone(item.type)}`)}
+            <div class="notification-body">
               <strong>${escapeHtml(item.title)}</strong>
               <p>${escapeHtml(item.description)}</p>
-              <span>${escapeHtml(item.relatedObjectName || moduleName(item.module))} / ${formatNotificationTime(item.createdAt)}</span>
+              <span>${formatNotificationTime(item.createdAt)}</span>
             </div>
-            <button class="button secondary compact-button" type="button" data-notification-open="${escapeHtml(item.id)}">${escapeHtml(item.actionLabel || "Przejdz")}</button>
+            <div class="notification-card-actions">
+              <button class="button secondary compact-button notification-open-button" type="button" data-notification-open="${escapeHtml(item.id)}">Przejdz do dokumentu</button>
+              <button class="icon-button notification-read-button" type="button" data-notification-read="${escapeHtml(item.id)}" aria-label="Oznacz jako odczytane" ${item.read ? "disabled" : ""}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"></path></svg>
+              </button>
+            </div>
           </article>
         `).join("") || emptyState("Brak powiadomien", "Historia powiadomien pojawi sie tutaj.")}
       </div>
       <div class="notifications-actions">
-        <button class="button secondary compact-button" type="button" data-notifications-history>Zobacz wszystkie powiadomienia</button>
+        <button class="button secondary compact-button" type="button" data-notifications-history>Zobacz wszystkie</button>
         <button class="button ghost compact-button" type="button" data-notifications-clear-read>Wyczysc przeczytane</button>
       </div>
     </div>
@@ -1193,8 +1196,10 @@ function renderGlobalSearch() {
   const showPanel = state.searchOpen && state.searchQuery.trim().length > 0;
   globalSearch.innerHTML = `
     <label class="global-search-box">
-      <span aria-hidden="true">S</span>
-      <input id="global-search-input" type="search" value="${escapeHtml(state.searchQuery)}" placeholder="Szukaj dokumentow, mentorow, kontaktow..." autocomplete="off" />
+      <span aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 4 4"></path></svg>
+      </span>
+      <input id="global-search-input" type="search" value="${escapeHtml(state.searchQuery)}" placeholder="Szukaj" autocomplete="off" />
     </label>
     <div class="search-results-panel" ${showPanel ? "" : "hidden"}>
       ${results.length ? results.map(searchResult).join("") : emptyState("Brak wynikow dla podanej frazy", "Sprobuj wpisac nazwe dokumentu, mentora, konkursu albo status.")}
@@ -1262,7 +1267,289 @@ function openSearchResult(id) {
   renderGlobalSearch();
 }
 
+function createMockData() {
+  const createdAt = "2026-05-08T13:57:53.100Z";
+  return {
+    beneficiaries: [
+      { id: "admin", name: "ADMIN", slug: "admin", role: "admin", active: true, createdAt },
+      { id: "ben_fundacja_demo", name: "Fundacja Demo", slug: "fundacja-demo", role: "beneficiary", active: true, createdAt },
+      { id: "ben_spolka_testowa", name: "Spolka Testowa", slug: "spolka-testowa", role: "beneficiary", active: true, createdAt }
+    ],
+    startupCards: {
+      ben_fundacja_demo: { beneficiaryId: "ben_fundacja_demo", companyName: "Fundacja Demo", acronym: "APPLC" },
+      ben_spolka_testowa: { beneficiaryId: "ben_spolka_testowa", companyName: "Spolka Testowa", acronym: "" }
+    },
+    expenses: [
+      {
+        id: "exp_demo_1",
+        beneficiaryId: "ben_fundacja_demo",
+        invoiceNumber: "FV/AKCES/01/2026",
+        contractor: "Centrum Szkolen Alfa",
+        invoiceDate: "2026-05-03",
+        paymentDate: "2026-05-17",
+        netAmount: 4200,
+        vatRate: "23",
+        vatAmount: 966,
+        grossAmount: 5166,
+        acquisitionMethod: "przelew",
+        priorityGoal: "1",
+        detailedGoal: "1",
+        description: "Warsztat wdrozeniowy dla beneficjenta.",
+        status: "zatwierdzony",
+        attachments: [],
+        createdAt,
+        createdBy: "admin"
+      },
+      {
+        id: "exp_demo_2",
+        beneficiaryId: "ben_spolka_testowa",
+        invoiceNumber: "RACH/88/2026",
+        contractor: "Biuro Ekspertyz Beta",
+        invoiceDate: "2026-04-28",
+        paymentDate: "2026-05-10",
+        netAmount: 2500,
+        vatRate: "23",
+        vatAmount: 575,
+        grossAmount: 3075,
+        acquisitionMethod: "przelew",
+        priorityGoal: "2",
+        detailedGoal: "2",
+        description: "Ekspertyza do raportu okresowego.",
+        status: "odrzucony",
+        attachments: [],
+        createdAt,
+        createdBy: "admin"
+      }
+    ],
+    documents: [
+      { id: "doc_demo_1", beneficiaryId: "ben_fundacja_demo", title: "Harmonogram monitoringu", category: "Monitoring", owner: "ADMIN", status: "do-pobrania", note: "Dokument roboczy do konsultacji.", attachments: [], createdAt, createdBy: "admin" }
+    ],
+    calendar: [
+      { id: "cal_demo_1", beneficiaryId: "ben_fundacja_demo", title: "Przekazanie weksla", startAt: "2026-05-20T09:00", endAt: "2026-05-20T10:00", ownerId: "admin", participantIds: ["ben_fundacja_demo"], type: "formalnosc", color: "#f26a21", status: "do-zrobienia", note: "Termin widoczny dla beneficjenta i administratora.", attachments: [] },
+      { id: "cal_demo_2", beneficiaryId: "ben_fundacja_demo", title: "Spotkanie mentoringowe", startAt: "2026-06-12T10:00", endAt: "2026-06-12T12:00", ownerId: "admin", participantIds: ["ben_fundacja_demo"], type: "mentoring", color: "#2563eb", status: "do-zrobienia", note: "Omowienie harmonogramu mentoringu.", attachments: [] }
+    ],
+    tutorials: [
+      { id: "tut_1", title: "Jak dodac wydatek", body: "Uzupelnij dane faktury, kontrahenta, kwoty netto, stawke VAT, cele oraz dodaj przynajmniej jeden zalacznik." },
+      { id: "tut_2", title: "Co oznaczaja statusy", body: "ADMIN nadaje statusy wydatkom i dokumentom, a beneficjent widzi aktualny etap obslugi." }
+    ]
+  };
+}
+
+function makeMockId(prefix) {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function mockStorage() {
+  try {
+    return window.localStorage || null;
+  } catch {
+    return null;
+  }
+}
+
+function readMockData() {
+  const storage = mockStorage();
+  try {
+    const stored = storage?.getItem(mockStorageKey);
+    if (stored) return JSON.parse(stored);
+  } catch {
+    storage?.removeItem(mockStorageKey);
+  }
+  if (inMemoryMockData) return inMemoryMockData;
+  const data = createMockData();
+  writeMockData(data);
+  return data;
+}
+
+function writeMockData(data) {
+  inMemoryMockData = data;
+  try {
+    mockStorage()?.setItem(mockStorageKey, JSON.stringify(data));
+  } catch {
+    // Demo still works in-memory when browser storage is unavailable.
+  }
+}
+
+function mockActor(data, actorId = "admin") {
+  return data.beneficiaries.find((beneficiary) => beneficiary.id === actorId) || data.beneficiaries.find((beneficiary) => beneficiary.id === "admin");
+}
+
+function mockIsAdmin(actor) {
+  return actor?.id === "admin" || actor?.role === "admin";
+}
+
+function mockScope(data, actor, scopeBeneficiaryId = "all") {
+  if (!mockIsAdmin(actor)) return actor?.id || "";
+  if (!scopeBeneficiaryId || scopeBeneficiaryId === "admin") return "all";
+  if (scopeBeneficiaryId === "all") return "all";
+  return data.beneficiaries.some((beneficiary) => beneficiary.id === scopeBeneficiaryId && beneficiary.id !== "admin") ? scopeBeneficiaryId : "all";
+}
+
+function mockBelongsToScope(item, scope) {
+  if (scope === "all") return true;
+  return item.beneficiaryId === scope || item.ownerId === scope || (item.participantIds || []).includes(scope);
+}
+
+function selectedMockData(data, actorId, scopeBeneficiaryId = "all") {
+  const actor = mockActor(data, actorId);
+  const scope = mockScope(data, actor, scopeBeneficiaryId);
+  const admin = mockIsAdmin(actor);
+  const beneficiaries = admin ? data.beneficiaries : data.beneficiaries.filter((beneficiary) => beneficiary.id === "admin" || beneficiary.id === actor.id);
+  const startupCards = {};
+  beneficiaries.forEach((beneficiary) => {
+    if (beneficiary.id !== "admin" && (scope === "all" || beneficiary.id === scope)) {
+      startupCards[beneficiary.id] = data.startupCards[beneficiary.id] || { beneficiaryId: beneficiary.id, companyName: beneficiary.name, acronym: "" };
+    }
+  });
+  return {
+    actorId: actor?.id || "admin",
+    scopeBeneficiaryId: scope,
+    beneficiaries,
+    expenses: data.expenses.filter((item) => mockBelongsToScope(item, scope)),
+    documents: data.documents.filter((item) => mockBelongsToScope(item, scope)),
+    calendar: data.calendar.filter((item) => mockBelongsToScope(item, scope)),
+    startupCards,
+    tutorials: data.tutorials
+  };
+}
+
+function resolveMockBeneficiary(data, actor, requestedId) {
+  if (mockIsAdmin(actor)) {
+    if (requestedId && requestedId !== "all") return data.beneficiaries.find((beneficiary) => beneficiary.id === requestedId && beneficiary.id !== "admin" && beneficiary.active);
+    return data.beneficiaries.find((beneficiary) => beneficiary.id !== "admin" && beneficiary.active);
+  }
+  return data.beneficiaries.find((beneficiary) => beneficiary.id === actor?.id && beneficiary.active);
+}
+
+function createMockAttachment(file, kind = "attachment") {
+  if (!file?.name) return null;
+  return {
+    id: makeMockId("file"),
+    fileName: file.name,
+    kind,
+    content: file.content || "",
+    createdAt: new Date().toISOString()
+  };
+}
+
+function mockJsonError(message) {
+  return Promise.reject(new Error(message));
+}
+
+async function mockApi(path, options = {}) {
+  const url = new URL(path, window.location.origin);
+  const method = (options.method || "GET").toUpperCase();
+  const body = options.body ? JSON.parse(options.body) : {};
+  const data = readMockData();
+
+  if (method === "GET" && url.pathname === "/api/state") {
+    return selectedMockData(data, url.searchParams.get("actorId") || "admin", url.searchParams.get("scopeBeneficiaryId") || "all");
+  }
+
+  if (method === "POST" && url.pathname === "/api/beneficiaries") {
+    const actor = mockActor(data, body.actorId || "admin");
+    if (!mockIsAdmin(actor)) return mockJsonError("Tylko ADMIN moze dodawac beneficjentow.");
+    const name = String(body.name || "").trim();
+    if (name.length < 2) return mockJsonError("Nazwa beneficjenta jest wymagana.");
+    const beneficiary = { id: makeMockId("ben"), name, slug: normalizeSearchText(name).replaceAll(" ", "-") || makeMockId("beneficjent"), role: "beneficiary", active: true, createdAt: new Date().toISOString() };
+    data.beneficiaries.push(beneficiary);
+    data.startupCards[beneficiary.id] = { beneficiaryId: beneficiary.id, companyName: name, acronym: "" };
+    writeMockData(data);
+    return beneficiary;
+  }
+
+  if (method === "PATCH" && url.pathname.startsWith("/api/beneficiaries/")) {
+    const actor = mockActor(data, body.actorId || "admin");
+    if (!mockIsAdmin(actor)) return mockJsonError("Tylko ADMIN moze zmieniac status beneficjenta.");
+    const beneficiary = data.beneficiaries.find((item) => item.id === url.pathname.split("/").pop() && item.id !== "admin");
+    if (!beneficiary) return mockJsonError("Beneficjent nie zostal znaleziony.");
+    beneficiary.active = Boolean(body.active);
+    writeMockData(data);
+    return beneficiary;
+  }
+
+  if (method === "POST" && url.pathname === "/api/expenses") {
+    const actor = mockActor(data, body.actorId || "");
+    const beneficiary = resolveMockBeneficiary(data, actor, body.beneficiaryId);
+    if (!beneficiary) return mockJsonError("Wybierz aktywnego beneficjenta dla wydatku.");
+    const attachments = [
+      ...(body.invoiceFiles || []).map((file) => createMockAttachment(file, "invoice")).filter(Boolean),
+      ...(body.otherFiles || []).map((file) => createMockAttachment(file, "other")).filter(Boolean)
+    ];
+    if (!attachments.length) return mockJsonError("Dodaj przynajmniej jeden zalacznik do wydatku.");
+    const netAmount = Number(body.netAmount || 0);
+    const vatRate = String(body.vatRate || "23");
+    const vatAmount = vatRate === "zw" ? 0 : Math.round(netAmount * (Number(vatRate) / 100) * 100) / 100;
+    const expense = {
+      id: makeMockId("exp"),
+      beneficiaryId: beneficiary.id,
+      invoiceNumber: String(body.invoiceNumber || "").trim(),
+      contractor: String(body.contractor || "").trim(),
+      invoiceDate: body.invoiceDate || "",
+      paymentDate: body.paymentDate || "",
+      netAmount,
+      vatRate,
+      vatAmount,
+      grossAmount: Math.round((netAmount + vatAmount) * 100) / 100,
+      acquisitionMethod: String(body.acquisitionMethod || "").trim(),
+      priorityGoal: String(body.priorityGoal || "").match(/([1-9]|10)/)?.[1] || "",
+      detailedGoal: String(body.detailedGoal || "").match(/([1-9]|10)/)?.[1] || "",
+      description: String(body.description || "").trim(),
+      status: "przekazany-do-weryfikacji",
+      attachments,
+      createdAt: new Date().toISOString(),
+      createdBy: actor?.id || "admin"
+    };
+    data.expenses.unshift(expense);
+    writeMockData(data);
+    return expense;
+  }
+
+  if (method === "PATCH" && url.pathname.startsWith("/api/expenses/")) {
+    const expense = data.expenses.find((item) => item.id === url.pathname.split("/").pop());
+    if (!expense) return mockJsonError("Wydatek nie zostal znaleziony.");
+    expense.status = body.status || expense.status;
+    writeMockData(data);
+    return expense;
+  }
+
+  if ((method === "POST" && url.pathname === "/api/calendar") || (method === "PATCH" && url.pathname.startsWith("/api/calendar/"))) {
+    const actor = mockActor(data, body.actorId || state.actorId);
+    const id = method === "PATCH" ? url.pathname.split("/").pop() : makeMockId("cal");
+    const existing = data.calendar.find((item) => item.id === id);
+    const beneficiary = resolveMockBeneficiary(data, actor, body.beneficiaryId || existing?.beneficiaryId);
+    if (!beneficiary) return mockJsonError("Wybierz aktywnego beneficjenta dla wydarzenia.");
+    const next = {
+      id,
+      beneficiaryId: beneficiary.id,
+      title: String(body.title || existing?.title || "").trim(),
+      startAt: body.startAt || existing?.startAt || "",
+      endAt: body.endAt || existing?.endAt || "",
+      ownerId: existing?.ownerId || actor?.id || "admin",
+      participantIds: Array.isArray(body.participantIds) ? body.participantIds : existing?.participantIds || [beneficiary.id],
+      type: existing?.type || "zadanie",
+      color: body.color || existing?.color || "#f26a21",
+      status: existing?.status || "do-zrobienia",
+      note: String(body.note || "").trim(),
+      attachments: [...(existing?.attachments || []), ...(body.files || []).map((file) => createMockAttachment(file, "calendar")).filter(Boolean)]
+    };
+    if (existing) data.calendar = data.calendar.map((item) => item.id === id ? next : item);
+    else data.calendar.unshift(next);
+    writeMockData(data);
+    return next;
+  }
+
+  if (method === "DELETE" && url.pathname.startsWith("/api/calendar/")) {
+    data.calendar = data.calendar.filter((item) => item.id !== url.pathname.split("/").pop());
+    writeMockData(data);
+    return { ok: true };
+  }
+
+  return mockJsonError("Ta akcja demo nie wymaga backendu albo nie jest jeszcze zamockowana.");
+}
+
 async function api(path, options = {}) {
+  if (path.startsWith("/api/")) return mockApi(path, options);
   const response = await fetch(path, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options
@@ -1339,7 +1626,9 @@ function syncShellState() {
   if (sidebarCollapse) {
     sidebarCollapse.setAttribute("aria-expanded", String(!state.sidebarCollapsed));
     sidebarCollapse.setAttribute("aria-label", state.sidebarCollapsed ? "Rozwin panel boczny" : "Zwin panel boczny");
-    sidebarCollapse.querySelector("span").textContent = state.sidebarCollapsed ? ">" : "<";
+    const iconPath = state.sidebarCollapsed ? "m9 18 6-6-6-6" : "m15 18-6-6 6-6";
+    const icon = sidebarCollapse.querySelector(".nav-icon");
+    if (icon) icon.innerHTML = `<svg viewBox="0 0 24 24"><path d="${iconPath}"></path></svg>`;
   }
   renderNotificationMenu();
   renderGlobalSearch();
@@ -1459,8 +1748,8 @@ function startupProfileBase() {
       krs: card.krs || "0000123456",
       regon: card.regon || "012345678",
       registeredAddress: card.mailingAddress || "ul. Innowacyjna 12, 00-001 Warszawa",
-      website: "https://seamesh.example.com",
-      social: "https://linkedin.com/company/seamesh",
+      website: "https://example.com/applc-demo",
+      social: "https://example.com/company/applc-demo",
       industry: "rolnictwo ekologiczne / agrotech / planowanie upraw",
       companyStatus: "Aktywny w programie"
     },
@@ -1470,7 +1759,7 @@ function startupProfileBase() {
       program: "HPN IMPAKT / Akces NCBR",
       contractNumber: "AKCES/HPN/2026/014",
       agreementDate: "28.04.2026",
-      accelerationPeriod: "28.04.2026-27.10.2026",
+      accelerationPeriod: "28.04.2026 - 27.10.2026",
       programStage: "Realizacja akceleracji",
       thematicArea: "zrownowazone rolnictwo, ogrodnictwo i technologie wspierajace uprawy",
       developmentStage: "MVP / pilotaz",
@@ -1489,7 +1778,7 @@ function startupProfileBase() {
         name: "Maria Nowak",
         function: "CEO",
         projectRole: "liderka projektu",
-        email: "maria.nowak@seamesh.example.com",
+        email: "maria.nowak@applc-demo.example.com",
         phone: "+48 501 100 200",
         type: "kontakt glowny",
         representation: "tak"
@@ -1498,7 +1787,7 @@ function startupProfileBase() {
         name: "Adam Zielinski",
         function: "CFO",
         projectRole: "kontakt finansowy",
-        email: "adam.zielinski@seamesh.example.com",
+        email: "adam.zielinski@applc-demo.example.com",
         phone: "+48 501 200 300",
         type: "kontakt finansowy",
         representation: "nie"
@@ -1507,7 +1796,7 @@ function startupProfileBase() {
         name: "Olga Kaminska",
         function: "CTO",
         projectRole: "koordynacja techniczna",
-        email: "olga.kaminska@seamesh.example.com",
+        email: "olga.kaminska@applc-demo.example.com",
         phone: "+48 501 300 400",
         type: "kontakt techniczny",
         representation: "nie"
@@ -1516,7 +1805,7 @@ function startupProfileBase() {
     correspondence: {
       correspondenceAddress: card.mailingAddress || "ul. Innowacyjna 12, 00-001 Warszawa",
       paperDocumentsAddress: "ul. Innowacyjna 12, pok. 4.2, 00-001 Warszawa",
-      formalEmail: "formal@seamesh.example.com",
+      formalEmail: "formal@applc-demo.example.com",
       preferredContact: "e-mail, a w sprawach pilnych telefon do kontaktu glownego",
       notes: "Prosba o kierowanie korespondencji formalnej rownolegle do osoby kontaktowej i na adres formalny."
     }
@@ -1562,7 +1851,9 @@ function attachmentList(attachments = []) {
       ${attachments
         .map((file) => {
           const kind = file.kind === "invoice" ? "Faktura/Rachunek" : file.kind === "other" ? "Pozostale" : "Plik";
-          return `<li><a href="/api/files/${encodeURIComponent(file.id)}?actorId=${encodeURIComponent(state.actorId)}" target="_blank" rel="noopener">${escapeHtml(kind)}: ${escapeHtml(file.fileName)}</a></li>`;
+          const href = file.content || "#";
+          const download = file.content ? ` download="${escapeHtml(file.fileName)}"` : ` aria-disabled="true"`;
+          return `<li><a href="${escapeHtml(href)}"${download}>${escapeHtml(kind)}: ${escapeHtml(file.fileName)}</a></li>`;
         })
         .join("")}
     </ul>
@@ -1725,7 +2016,7 @@ function renderStart() {
         <article><span>Priorytety</span><strong>${attentionTasks.length}</strong></article>
         <article><span>Dokumenty wymagajace uwagi</span><strong>${documentsAttention}</strong></article>
         <article><span>Mentor prowadzacy</span><strong>${mentorUsedHours(leadMentor)} / ${leadMentor.limit} h</strong></article>
-        <article><span>Najblizszy termin</span><strong>${nextCalendarItem ? formatDate(calendarEventStart(nextCalendarItem).slice(0, 10)) : "-"}</strong></article>
+        <article><span>Deadline</span><strong>${nextCalendarItem ? formatDate(calendarEventStart(nextCalendarItem).slice(0, 10)) : "-"}</strong></article>
       </section>
 
       <section class="welcome-panel">
@@ -1739,10 +2030,9 @@ function renderStart() {
           <div><dt>Etap</dt><dd>${escapeHtml(accelerationProject.stage)}</dd></div>
           <div><dt>Okres akceleracji</dt><dd>${escapeHtml(accelerationProject.period)}</dd></div>
           <div><dt>Opiekun projektu</dt><dd>${escapeHtml(dashboard.supervisor)}</dd></div>
-          <div><dt>Status</dt><dd>${statusBadge(accelerationProject.status)}</dd></div>
         </dl>
         <div class="progress-block" aria-label="Postep akceleracji">
-          <div>
+          <div class="progress-copy">
             <strong>Akceleracja: ${accelerationProject.progress}% czasu za nami</strong>
             <span>${escapeHtml(accelerationProject.period)}</span>
           </div>
@@ -1767,7 +2057,9 @@ function renderStart() {
                   <p>${escapeHtml(task.description)}</p>
                   ${task.due ? `<span class="task-due">Termin: ${escapeHtml(task.due)}</span>` : ""}
                 </div>
-                <button class="button secondary" type="button" data-go="${escapeHtml(task.view)}">${escapeHtml(task.action)}</button>
+                <button class="icon-button task-icon-button" type="button" data-go="${escapeHtml(task.view)}" aria-label="${escapeHtml(task.action)}">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
+                </button>
               </article>
             `).join("")}
           </div>
@@ -1775,9 +2067,10 @@ function renderStart() {
 
         <aside class="supervisor-card">
           ${contactAvatar(advisor, "large")}
-          <p class="eyebrow">Twoj opiekun projektu</p>
-          <h2>${escapeHtml(advisor.name)}</h2>
-          <p>${escapeHtml(advisor.position)}</p>
+          <div class="supervisor-main">
+            <h2>${escapeHtml(advisor.name)}</h2>
+            <p>${escapeHtml(advisor.position)}</p>
+          </div>
           <dl>
             <div><dt>E-mail</dt><dd><a href="mailto:${escapeHtml(advisor.email)}">${escapeHtml(advisor.email)}</a></dd></div>
             <div><dt>Telefon</dt><dd><a href="tel:${escapeHtml(advisor.phone)}">${escapeHtml(advisor.phone)}</a></dd></div>
@@ -1788,13 +2081,6 @@ function renderStart() {
           </div>
         </aside>
       </div>
-
-      <section class="quick-links">
-        <button class="quick-link" type="button" data-go="documents"><span>DK</span><strong>Dokumenty</strong></button>
-        <button class="quick-link" type="button" data-go="mentoring"><span>MT</span><strong>Mentoring</strong></button>
-        <button class="quick-link" type="button" data-go="expenses"><span>GW</span><strong>Grant i wydatki</strong></button>
-        <button class="quick-link" type="button" data-go="calendar"><span>KL</span><strong>Kalendarz</strong></button>
-      </section>
     </section>
     ${renderAddressBookModal()}
   `;
@@ -2682,7 +2968,7 @@ function renderReports() {
         <div class="field">
           <label for="report-format">Format</label>
           <select id="report-format" name="format">
-            <option value="xlsx">Excel (.xlsx)</option>
+            <option value="xls">Excel (.xls)</option>
           </select>
         </div>
       </div>
@@ -3524,7 +3810,7 @@ function renderMarketing() {
 function renderSettings() {
   const isAdminActive = isAdmin();
   app.innerHTML = `
-    ${pageHead("Ustawienia", "Administrator dodaje beneficjentow. Dla kazdego beneficjenta aplikacja tworzy lokalne foldery na pliki i dane.")}
+    ${pageHead("Ustawienia", "Administrator dodaje beneficjentow do danych demo. Zmiany sa zapisywane w tej przegladarce.")}
     <section class="settings-grid">
       <form class="form-panel" id="beneficiary-form">
         <input type="hidden" name="actorId" value="${state.actorId}" />
@@ -3546,7 +3832,7 @@ function renderSettings() {
               <h3>${escapeHtml(beneficiary.name)}</h3>
               <p class="meta">
                 <span>${beneficiary.role === "admin" ? "administrator" : "beneficjent"}</span>
-                <span>local-data/beneficiaries/${escapeHtml(beneficiary.slug)}/</span>
+                <span>dane demo w przegladarce</span>
                 <span>${beneficiary.active ? "aktywny" : "nieaktywny"}</span>
               </p>
             </div>
@@ -3964,6 +4250,74 @@ function mentoringReportRows(scopeId) {
   });
 }
 
+function downloadExcelTable({ filename, columns, rows }) {
+  const html = `
+    <html><head><meta charset="UTF-8" /></head><body>
+      <table>
+        <thead><tr>${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${rows.map((row) => `<tr>${columns.map((column) => `<td>${escapeHtml(row[column] ?? "")}</td>`).join("")}</tr>`).join("")}
+        </tbody>
+      </table>
+    </body></html>
+  `;
+  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportOperationalReport(type, scopeBeneficiaryId) {
+  const data = selectedMockData(readMockData(), state.actorId, scopeBeneficiaryId || state.scopeBeneficiaryId);
+  const beneficiaryName = (id) => data.beneficiaries.find((beneficiary) => beneficiary.id === id)?.name || id || "-";
+  const reportConfig = {
+    expenses: {
+      filename: "raport-grant-i-wydatki.xls",
+      columns: ["Beneficjent", "Numer dokumentu", "Kontrahent", "Data faktury", "Kwota brutto", "Status", "Opis"],
+      rows: data.expenses.map((expense) => ({
+        "Beneficjent": beneficiaryName(expense.beneficiaryId),
+        "Numer dokumentu": expense.invoiceNumber,
+        "Kontrahent": expense.contractor,
+        "Data faktury": formatDate(expense.invoiceDate),
+        "Kwota brutto": money(expense.grossAmount),
+        "Status": expense.status,
+        "Opis": expense.description
+      }))
+    },
+    documents: {
+      filename: "raport-dokumenty.xls",
+      columns: ["Beneficjent", "Tytul", "Kategoria", "Status", "Notatka"],
+      rows: data.documents.map((document) => ({
+        "Beneficjent": beneficiaryName(document.beneficiaryId),
+        "Tytul": document.title,
+        "Kategoria": document.category,
+        "Status": document.status,
+        "Notatka": document.note
+      }))
+    },
+    calendar: {
+      filename: "raport-kalendarz.xls",
+      columns: ["Beneficjent", "Tytul", "Start", "Koniec", "Status", "Notatka"],
+      rows: data.calendar.map((event) => ({
+        "Beneficjent": beneficiaryName(event.beneficiaryId),
+        "Tytul": event.title,
+        "Start": formatDateTime(event.startAt),
+        "Koniec": formatDateTime(event.endAt),
+        "Status": event.status,
+        "Notatka": event.note
+      }))
+    }
+  };
+  const config = reportConfig[type] || reportConfig.expenses;
+  downloadExcelTable(config);
+  showToast("Wygenerowano raport demo do Excela.");
+}
+
 function exportMentoringReport(scopeId) {
   const rows = mentoringReportRows(scopeId);
   const columns = [
@@ -3985,25 +4339,11 @@ function exportMentoringReport(scopeId) {
     "Czy uwzglednic w sprawozdaniu miesiecznym",
     "Uwagi"
   ];
-  const html = `
-    <html><head><meta charset="UTF-8" /></head><body>
-      <table>
-        <thead><tr>${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("")}</tr></thead>
-        <tbody>
-          ${rows.map((row) => `<tr>${columns.map((column) => `<td>${escapeHtml(row[column] ?? "")}</td>`).join("")}</tr>`).join("")}
-        </tbody>
-      </table>
-    </body></html>
-  `;
-  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `raport-godzin-mentoring-${scopeId}-${state.mentoringExportMonth}.xls`;
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
+  downloadExcelTable({
+    filename: `raport-godzin-mentoring-${scopeId}-${state.mentoringExportMonth}.xls`,
+    columns,
+    rows
+  });
   showToast("Wygenerowano raport godzin do Excela.");
 }
 
@@ -4393,6 +4733,15 @@ document.addEventListener("click", async (event) => {
   const notificationItem = event.target.closest("[data-notification-id]");
   if (notificationItem && !event.target.closest("button")) {
     openNotification(notificationItem.dataset.notificationId);
+    return;
+  }
+
+  const notificationRead = event.target.closest("[data-notification-read]");
+  if (notificationRead) {
+    state.notifications = state.notifications.map((item) =>
+      item.id === notificationRead.dataset.notificationRead ? { ...item, read: true } : item
+    );
+    renderNotificationMenu();
     return;
   }
 
@@ -5055,7 +5404,7 @@ document.addEventListener("submit", async (event) => {
 
     if (form.id === "report-form") {
       const payload = formDataToObject(form);
-      window.location.href = `/api/reports/${payload.type}.xlsx?actorId=${state.actorId}&scopeBeneficiaryId=${payload.scopeBeneficiaryId}`;
+      exportOperationalReport(payload.type, payload.scopeBeneficiaryId);
     }
 
     if (form.id === "beneficiary-form") {

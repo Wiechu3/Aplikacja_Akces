@@ -14,10 +14,12 @@
             <button class="brand brand-trigger" type="button" data-context-toggle aria-expanded="false" aria-controls="context-menu">
               <span class="brand-mark">AKCES</span>
               <span class="brand-name">Akces NCBR</span>
-              <span class="brand-caret" aria-hidden="true">v</span>
+              <span class="brand-caret" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
+              </span>
             </button>
             <div class="context-menu" id="context-menu" hidden>
-              <p class="context-menu-title">Kontekst pracy</p>
+              <p class="context-menu-title">Tryb widoku</p>
               <div class="field compact">
                 <label for="actor-select">Dzialam jako</label>
                 <select id="actor-select"></select>
@@ -29,8 +31,11 @@
               <button class="context-placeholder" type="button" disabled>Przyszle ustawienia uzytkownika</button>
             </div>
           </div>
-          <button class="icon-button sidebar-collapse" type="button" data-sidebar-collapse aria-label="Zwin panel boczny" aria-expanded="true">
-            <span aria-hidden="true">&lt;</span>
+          <button class="nav-button sidebar-collapse" type="button" data-sidebar-collapse aria-label="Zwin panel boczny" aria-expanded="true">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg>
+            </span>
+            <span class="nav-label">Menu</span>
           </button>
         </div>
         <nav class="sidebar-nav" aria-label="Menu glowne">
