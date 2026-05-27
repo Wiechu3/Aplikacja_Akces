@@ -2023,7 +2023,7 @@ function renderStart() {
         <div>
           <p class="eyebrow">Panel Beneficjenta</p>
           <h2>Witaj, ${escapeHtml(dashboard.companyName)}</h2>
-          <p>Projekt: ${escapeHtml(dashboard.projectName)} / ${escapeHtml(dashboard.acronym)}</p>
+          <p>Projekt: ${escapeHtml(dashboard.projectName)}</p>
         </div>
         <dl class="project-facts">
           <div><dt>Program</dt><dd>${escapeHtml(accelerationProject.program)}</dd></div>
@@ -2032,11 +2032,11 @@ function renderStart() {
           <div><dt>Opiekun projektu</dt><dd>${escapeHtml(dashboard.supervisor)}</dd></div>
         </dl>
         <div class="progress-block" aria-label="Postep akceleracji">
+          <div class="progress-track"><span style="width: ${accelerationProject.progress}%"></span></div>
           <div class="progress-copy">
             <strong>Akceleracja: ${accelerationProject.progress}% czasu za nami</strong>
             <span>${escapeHtml(accelerationProject.period)}</span>
           </div>
-          <div class="progress-track"><span style="width: ${accelerationProject.progress}%"></span></div>
         </div>
       </section>
 
